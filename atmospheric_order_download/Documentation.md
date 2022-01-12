@@ -74,6 +74,8 @@ The utility will follow any re-directs and thus supports redirected delivery.
 | --retry          | -a| Retry failures from each order   | For example: --retry                                           | False   | 
 | --retryperiod    | -p| Seconds to wait for retry        | For example: --retryperiod 30                                  | 300     | 
 | --debug          | -z| Put into debug mode              | For example: --debug                                           | False   | 
+| --printurl       | -x| Print URLs as accessed/redirected | For example: --printurl                                       | False   | 
+
 
 ## Some guidance on use
 
