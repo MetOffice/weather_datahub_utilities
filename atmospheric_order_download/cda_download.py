@@ -18,6 +18,7 @@ import uuid
 MODEL_LIST = ["mo-global", "mo-uk", "mo-uk-latlon", "mo-mogrepsg"]
 BASE_URL = "https://api-metoffice.apiconnect.ibmcloud.com/metoffice/production/1.0.0"
 debugMode = False
+printUrl = False
 
 
 def get_order_details(
@@ -29,23 +30,21 @@ def get_order_details(
     actualHeaders = {"Accept": "application/json"}
     actualHeaders.update(requestHeaders)
 
-    urlo = baseUrl + "/orders"
-    reqo = requests.get(urlo, headers=actualHeaders)
-    if reqo.status_code != 200:
-        print(
-            "ERROR: Unable to load details for order : ",
-            orderName,
-            " status code: ",
-            reqo.status_code,
-        )
-        exit()
-    else:
-        details = reqo.json()
-
-    if verbose:
-        print("Plan and limit : " + reqo.headers["X-RateLimit-Limit"])
-    if verbose:
-        print("Remaining calls: " + reqo.headers["X-RateLimit-Remaining"])
+    #    urlo = baseUrl + "/orders"
+    #    reqo = requests.get(urlo, headers=actualHeaders)
+    #    if printUrl == True:
+    #        print("get_order_details(1): ", urlo)
+    #        print("redirected to: ", reqo.url)
+    #    if reqo.status_code != 200:
+    #        print(
+    #            "ERROR: Unable to load details for order : ",
+    #            orderName,
+    #            " status code: ",
+    #            reqo.status_code,
+    #        )
+    #        exit()
+    #    else:
+    #        details = reqo.json()
 
     url = baseUrl + "/orders/" + orderName + "/latest"
     if useEnhancedApi:
@@ -54,6 +53,16 @@ def get_order_details(
             url = url + "&runfilter=" + runsToDownload[0]
 
     req = requests.get(url, headers=actualHeaders)
+
+    if verbose:
+        print("Plan and limit : " + req.headers["X-RateLimit-Limit"])
+        print("Remaining calls: " + req.headers["X-RateLimit-Remaining"])
+
+    if printUrl == True:
+        print("get_order_details: ", url)
+        if url != req.url:
+            print("redirected to: ", req.url)
+
     if req.status_code != 200:
         print(
             "ERROR: Unable to load details for order : ",
@@ -115,6 +124,11 @@ def get_order_file(
     with requests.get(
         url, headers=actualHeaders, allow_redirects=True, stream=True
     ) as r:
+
+        if printUrl == True:
+            print("get_order_file: ", url)
+            if url != r.url:
+                print("redirected to: ", r.url)
 
         if r.status_code != 200:
 
@@ -343,6 +357,11 @@ def get_my_orders(baseUrl, requestHeaders):
 
     ordurl = baseUrl + "/orders?detail=MINIMAL"
     ordr = requests.get(ordurl, headers=ordHeaders)
+    if printUrl == True:
+        print("get_my_orders: ", ordurl)
+        if ordurl != ordr.url:
+            print("redirected to: ", ordr.url)
+
     if ordr.status_code != 200:
         print("ERROR:  Unable to get my orders list. Status code: ", ordr.status_code)
         exit()
@@ -386,6 +405,12 @@ def get_model_runs(baseUrl, requestHeaders, modelList):
     for model in modelList:
         requrl = baseUrl + "/runs/" + model + "?sort=RUNDATETIME"
         reqr = requests.get(requrl, headers=runHeaders)
+
+        if printUrl == True:
+            print("get_model_runs: ", requrl)
+            if requrl != reqr.url:
+                print("redirected to: ", reqr.url)
+
         if reqr.status_code != 200:
             print(
                 "ERROR:  Unable to get latest run for model: "
@@ -552,6 +577,14 @@ if __name__ == "__main__":
         help="Retry delay in seconds.",
     )
     parser.add_argument(
+        "-x",
+        "--printurl",
+        action="store_true",
+        dest="printurl",
+        default=False,
+        help="Print all accessed URLs and redirects",
+    )
+    parser.add_argument(
         "-z",
         "--debug",
         action="store_true",
@@ -576,6 +609,7 @@ if __name__ == "__main__":
     retryperiod = args.retryperiod
     debugMode = args.debugmode
     baseFolder = args.location
+    printUrl = args.printurl
 
     if debugMode == True:
         print("WARNING: As we are in debug mode setting workers to one.")
