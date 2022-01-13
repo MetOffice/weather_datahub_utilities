@@ -80,6 +80,12 @@ The utility will follow any re-directs and thus supports redirected delivery.
 ## Some guidance on use
 
 ```
+--url 
+```
+
+The default is to use the production URL so this does not need to be passed unless a different URL is being used.
+
+```
 --runs latest
 ```
 
