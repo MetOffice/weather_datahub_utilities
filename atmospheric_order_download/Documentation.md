@@ -60,7 +60,7 @@ The utility will follow any re-directs and thus supports redirected delivery.
 
 | Option           | - | Values                           | Description                                                    | Default |
 | ---------------- | - |--------------------------------- | ---------------------------------------------------------------|-------- |
-| --url            | -u| Service base URL                 | For example: --url https://api.dev.cda.metoffice.cloud/1.0.0   |         |  
+| --url            | -u| Service base URL                 | For example: --url https://api-metoffice.apiconnect.ibmcloud.com/metoffice/production/1.0.0 |         |  
 | --client         | -c| WDH client id key                 | For example: --client xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx    |         |  
 | --secret         | -s| WDH secret key                    | For example: --secret xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx    |         |  
 | --orders         | -o| List of orders name to download  | For example: --orders p3_pp_euro,p3_pp_global                  |         |  
