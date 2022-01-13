@@ -58,23 +58,23 @@ The utility will follow any re-directs and thus supports redirected delivery.
 
 ## Command line options
 
-| Option           | - | Values                           | Description                                                    | Default |
+| Option           | - | Description                           | Example of use                                                    | Default |
 | ---------------- | - |--------------------------------- | ---------------------------------------------------------------|-------- |
-| --url            | -u| Service base URL                 | For example: --url https://api-metoffice.apiconnect.ibmcloud.com/metoffice/production/1.0.0 |         |  
-| --client         | -c| WDH client id key                 | For example: --client xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx    |         |  
-| --secret         | -s| WDH secret key                    | For example: --secret xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx    |         |  
-| --orders         | -o| List of orders name to download  | For example: --orders p3_pp_euro,p3_pp_global                  |         |  
-| --runs           | -r| List of runs to download         | For example: --runs 00,12 or latest                            | 0,6,12,18 |  
-| --workers        | -w| Number of worker threads         | For example: --workers 2                                       | 4       |  
-| --join           | -j| Join downloaded files together   | For example: --join                                            | False   | 
-| --verbose        | -v| Print extra status messages      | For example: --verbose                                         | False   | 
-| --folderdate     | -d| Add date/time/run to folder      | For example: --folderdate                                      | False   | 
-| --location       | -l| The base folder to store files   | For example: --location C:\Data                                |         | 
-| --modellist      | -m| Pass the list of models to use   | For example: --modellist mo-global,m-uk-latlon                 |         | 
-| --retry          | -a| Retry failures from each order   | For example: --retry                                           | False   | 
-| --retryperiod    | -p| Seconds to wait for retry        | For example: --retryperiod 30                                  | 300     | 
-| --debug          | -z| Put into debug mode              | For example: --debug                                           | False   | 
-| --printurl       | -x| Print URLs as accessed/redirected | For example: --printurl                                       | False   | 
+| --url            | -u| Service base URL                 | --url https://api-metoffice.apiconnect.ibmcloud.com/metoffice/production/1.0.0 |         |  
+| --client         | -c| WDH client id key                 | --client xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx    |         |  
+| --secret         | -s| WDH secret key                    | --secret xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx    |         |  
+| --orders         | -o| List of orders name to download  | --orders p3_pp_euro,p3_pp_global                  |         |  
+| --runs           | -r| List of runs to download         | --runs 00,12 or latest                            | 0,6,12,18 |  
+| --workers        | -w| Number of worker threads         | --workers 2                                       | 4       |  
+| --join           | -j| Join downloaded files together   | --join                                            | False   | 
+| --verbose        | -v| Print extra status messages      | --verbose                                         | False   | 
+| --folderdate     | -d| Add date/time/run to folder      | --folderdate                                      | False   | 
+| --location       | -l| The base folder to store files   | --location C:\Data                                |         | 
+| --modellist      | -m| Pass the list of models to use   | --modellist mo-global,m-uk-latlon                 |         | 
+| --retry          | -a| Retry failures from each order   | --retry                                           | False   | 
+| --retryperiod    | -p| Seconds to wait for retry        | --retryperiod 30                                  | 300     | 
+| --debug          | -z| Put into debug mode              | --debug                                           | False   | 
+| --printurl       | -x| Print URLs as accessed/redirected | --printurl                                       | False   | 
 
 
 ## Some guidance on use
