@@ -3,6 +3,7 @@
 # This file is part of Weather DataHub and is released under the
 # BSD 3-Clause license.
 # See LICENSE in the root of the repository for full licensing details.
+# (c) Met Office 2022
 
 import csv, os
 import requests
@@ -19,6 +20,7 @@ MODEL_LIST = ["mo-global", "mo-uk", "mo-uk-latlon", "mo-mogrepsg"]
 BASE_URL = "https://api-metoffice.apiconnect.ibmcloud.com/metoffice/production/1.0.0"
 debugMode = False
 printUrl = False
+retryCount = 3
 
 
 def get_order_details(
@@ -30,22 +32,6 @@ def get_order_details(
     actualHeaders = {"Accept": "application/json"}
     actualHeaders.update(requestHeaders)
 
-    #    urlo = baseUrl + "/orders"
-    #    reqo = requests.get(urlo, headers=actualHeaders)
-    #    if printUrl == True:
-    #        print("get_order_details(1): ", urlo)
-    #        print("redirected to: ", reqo.url)
-    #    if reqo.status_code != 200:
-    #        print(
-    #            "ERROR: Unable to load details for order : ",
-    #            orderName,
-    #            " status code: ",
-    #            reqo.status_code,
-    #        )
-    #        exit()
-    #    else:
-    #        details = reqo.json()
-
     url = baseUrl + "/orders/" + orderName + "/latest"
     if useEnhancedApi:
         url = url + "?detail=MINIMAL"
@@ -54,7 +40,7 @@ def get_order_details(
 
     req = requests.get(url, headers=actualHeaders)
 
-    if verbose:
+    if verbose and apikey == "":
         print("Plan and limit : " + req.headers["X-RateLimit-Limit"])
         print("Remaining calls: " + req.headers["X-RateLimit-Remaining"])
 
@@ -404,24 +390,34 @@ def get_model_runs(baseUrl, requestHeaders, modelList):
 
     for model in modelList:
         requrl = baseUrl + "/runs/" + model + "?sort=RUNDATETIME"
-        reqr = requests.get(requrl, headers=runHeaders)
 
-        if printUrl == True:
-            print("get_model_runs: ", requrl)
-            if requrl != reqr.url:
-                print("redirected to: ", reqr.url)
+        for loop in range(retryCount):
 
-        if reqr.status_code != 200:
-            print(
-                "ERROR:  Unable to get latest run for model: "
-                + model
-                + " status code: ",
-                reqr.status_code,
-            )
-            continue
-        rundetails = reqr.json()
-        rawlatest = rundetails["completeRuns"]
-        modelRuns[model] = rawlatest[0]["run"] + ":" + rawlatest[0]["runDateTime"]
+            reqr = requests.get(requrl, headers=runHeaders)
+
+            if printUrl == True:
+                print("get_model_runs: ", requrl)
+                if requrl != reqr.url:
+                    print("redirected to: ", reqr.url)
+
+            if reqr.status_code != 200:
+                print(
+                    "ERROR:  Unable to get latest run for model: "
+                    + model
+                    + " status code: ",
+                    reqr.status_code,
+                )
+                if loop != (retryCount - 1):
+                    time.sleep(10)
+                    continue
+                else:
+                    print("ERROR:  Ran out of retries to get latest run for model: ")
+                    break
+
+            rundetails = reqr.json()
+            rawlatest = rundetails["completeRuns"]
+            modelRuns[model] = rawlatest[0]["run"] + ":" + rawlatest[0]["runDateTime"]
+            break
 
     return modelRuns
 
@@ -592,6 +588,14 @@ if __name__ == "__main__":
         default=False,
         help="Switch to debug mode.",
     )
+    parser.add_argument(
+        "-k",
+        "--apikey",
+        action="store",
+        dest="apikey",
+        default="",
+        help="Use direct API Key when not via APIM.",
+    )
 
     args = parser.parse_args()
 
@@ -609,6 +613,8 @@ if __name__ == "__main__":
     retryperiod = args.retryperiod
     debugMode = args.debugmode
     baseFolder = args.location
+    apikey = args.apikey
+
     printUrl = args.printurl
 
     if debugMode == True:
@@ -626,11 +632,14 @@ if __name__ == "__main__":
     guidFileNames = False
 
     # Client ID and Sectet must be supplied
-    if clientId == "" or secret == "":
+    if (clientId == "" or secret == "") and apikey == "":
         print("ERROR: IBM client and secret must be supplied.")
         exit()
 
-    requestHeaders = {"x-ibm-client-id": clientId, "x-ibm-client-secret": secret}
+    if apikey == "":
+        requestHeaders = {"x-ibm-client-id": clientId, "x-ibm-client-secret": secret}
+    else:
+        requestHeaders = {"x-api-key": apikey}
 
     if baseFolder != "":
         try:
@@ -654,6 +663,32 @@ if __name__ == "__main__":
 
     # Get my orders for future reference
     myOrders = get_my_orders(baseUrl, requestHeaders)
+
+    if len(myOrders["orders"]) == 0:
+        print(
+            "WARNING: You have no orders active on Weather DataHub.  Please confirm some orders and try again."
+        )
+        exit()
+
+    # For each of the orders to download get the model and add to my model list
+    myModelList = []
+    for orderName in ordersToDownload:
+        newModel = get_model_from_order(myOrders, orderName)
+        if newModel not in myModelList:
+            myModelList.append(newModel)
+    if verbose == True:
+        print(
+            "From the orders to process we have the following model list from active orders: ",
+            myModelList,
+        )
+
+    if myModelList == [] or myModelList == ["Not found"]:
+        print(
+            "ERROR: No models could be extracted from the orders to process: "
+            + str(ordersToDownload)
+        )
+        exit()
+
     myModelRuns = get_model_runs(baseUrl, requestHeaders, myModelList)
 
     retryManifest = []
@@ -661,6 +696,7 @@ if __name__ == "__main__":
     # Total number of files downloaded
 
     totalFiles = 0
+    finalRuns = []
     myTimeStamp = datetime.now().strftime("%d-%b-%Y-%H-%M-%S")
 
     # Process selected orders, generating tasks for the worker to actually download the file.
@@ -679,16 +715,12 @@ if __name__ == "__main__":
                 + " which doesn't appear in the list of active orders."
             )
             continue
-        if args.orderRuns == "":
+        if orderRuns == "":
             runsToDownload = ["00", "06", "12", "18"]
         else:
             if orderRuns == "latest":
                 modelToGet = get_model_from_order(myOrders, orderName)
-                if (
-                    modelToGet != "mo-global"
-                    and modelToGet != "mo-uk"
-                    and modelToGet != "mo-uk-latlon"
-                ):
+                if modelToGet not in myModelList:
                     print(
                         "ERROR: No idea what model: "
                         + modelToGet
@@ -705,6 +737,7 @@ if __name__ == "__main__":
                         )
                     continue
                 # Do I want this run?
+                finalRuns = []
                 runWanted = run_wanted(myOrders, orderName, runsToDownload)
                 if runWanted and verbose:
                     print("This run " + runsToDownload + " is wanted.")
@@ -713,9 +746,10 @@ if __name__ == "__main__":
                         print("This run " + runsToDownload + " is not wanted")
                     continue
                 runsToDownload = runsToDownload.split(",")
+                finalRuns.append(runsToDownload)
 
             else:
-                runsToDownload = args.orderRuns.split(",")
+                runsToDownload = orderRuns.split(",")
                 finalRuns = []
                 # Ensure only runs wanted are asked for
                 for checkRun in runsToDownload:
@@ -736,6 +770,7 @@ if __name__ == "__main__":
                 + orderName
                 + "were found.  Don't expect any data."
             )
+            continue
 
         order = get_order_details(
             baseUrl, requestHeaders, orderName, useEnhancedApi, runsToDownload
@@ -906,6 +941,17 @@ if __name__ == "__main__":
             error = False
 
             try:
+                if apikey != "":
+                    requestHeaders = {"x-api-key": apikey}
+
+                if verbose:
+                    print(
+                        "Retrying",
+                        baseUrl,
+                        retryFile["ordername"],
+                        retryFile["fileid"],
+                        retryFile["folder"],
+                    )
                 downloadResp = get_order_file(
                     baseUrl,
                     requestHeaders,
