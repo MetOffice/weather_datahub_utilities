@@ -473,7 +473,7 @@ if __name__ == "__main__":
         action="store",
         dest="baseUrl",
         default=BASE_URL,
-        help="Base URL used to access Weather DataHub API. Defaults to https://api-metoffice.apiconnect.ibmcloud.com/metoffice/development/1.0.0.",
+        help="Base URL used to access Weather DataHub API. Defaults to https://api-metoffice.apiconnect.ibmcloud.com/metoffice/production/1.0.0.",
     )
     parser.add_argument(
         "-c",
