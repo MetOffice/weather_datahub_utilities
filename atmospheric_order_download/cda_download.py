@@ -1,18 +1,21 @@
-# 2021 (C) Crown Copyright, Met Office. All rights reserved.
+# 2022 (C) Crown Copyright, Met Office. All rights reserved.
 #
 # This file is part of Weather DataHub and is released under the
 # BSD 3-Clause license.
 # See LICENSE in the root of the repository for full licensing details.
 # (c) Met Office 2022
 
-import csv, os
+import csv
+import os
+import sys
 import requests
 import argparse
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import queue
 import threading
 import uuid
+import pprint
 
 # Example code to download GRIB data files from the Met Office Weather DataHub via API calls
 
@@ -44,6 +47,10 @@ def get_order_details(
         print("Plan and limit : " + req.headers["X-RateLimit-Limit"])
         print("Remaining calls: " + req.headers["X-RateLimit-Remaining"])
 
+    if req.url.find("--") != -1:
+        if verbose:
+            print("-- found in redirect: ", req.url)
+
     if printUrl == True:
         print("get_order_details: ", url)
         if url != req.url:
@@ -56,7 +63,10 @@ def get_order_details(
             " status code: ",
             req.status_code,
         )
-        exit()
+        print("Headers: ",req.headers)
+        print("Text: ",req.text)
+        print("URL:", url)
+        sys.exit(6)
     else:
         details = req.json()
 
@@ -64,7 +74,7 @@ def get_order_details(
 
 
 def get_order_file(
-    baseUrl, requestHeaders, orderName, fileId, guidFileNames, folder, start
+    baseUrl, requestHeaders, orderName, fileId, guidFileNames, folder, start, backdatedDate
 ):
 
     # If file id is too long or random file names required generate a uuid for the file name
@@ -79,6 +89,16 @@ def get_order_file(
 
     ttfb = 0
 
+    if backdatedDate != "":
+        if debugMode == True:
+            print("DEBUG: We are in backdated Date mode for the date: " + backdatedDate)
+        fileId = fileId.replace("+", backdatedDate)
+        if debugMode == True:
+            print("DEBUG: New fileID is: " + fileId)
+        
+
+
+        
     url = baseUrl + "/orders/" + orderName + "/latest/" + fileId + "/data"
 
     if debugMode == True:
@@ -111,6 +131,10 @@ def get_order_file(
         url, headers=actualHeaders, allow_redirects=True, stream=True
     ) as r:
 
+        if r.url.find("--") != -1:
+            if verbose: 
+                print("-- found in redirect: ", r.url)
+
         if printUrl == True:
             print("get_order_file: ", url)
             if url != r.url:
@@ -118,7 +142,14 @@ def get_order_file(
 
         if r.status_code != 200:
 
-            raise Exception("HTTP Reason and Status: " + r.reason, r.status_code)
+            print("ERROR: File download failed.")
+            print("Headers: ",r.headers)
+            print("Text: ",r.text)
+            print("URL:", url)
+            print("Redirected URL:",r.url)
+
+            raise Exception("HTTP Reason and Status: " +
+                            r.reason, r.status_code)
 
         # Record time to first byte
         ttfb = start + r.elapsed.total_seconds()
@@ -175,6 +206,7 @@ def download_worker():
                     downloadTask["guidFileNames"],
                     downloadTask["folder"],
                     startTime,
+                    downloadTask["backdatedDate"]
                 )
                 timeToFirstByte = round((downloadResp[0] - startTime), 2)
                 downloadedFile = downloadResp[1]
@@ -349,8 +381,11 @@ def get_my_orders(baseUrl, requestHeaders):
             print("redirected to: ", ordr.url)
 
     if ordr.status_code != 200:
-        print("ERROR:  Unable to get my orders list. Status code: ", ordr.status_code)
-        exit()
+        print("ERROR:  Unable to get my orders list. Status code: ", ordr.status_code)            
+        print("Headers: ",ordr.headers)
+        print("Text: ",ordr.text)
+        print("URL:", ordurl)
+        sys.exit(1)
     orddetails = ordr.json()
 
     return orddetails
@@ -361,8 +396,19 @@ def get_latest_run(modelID, orderName, modelRuns):
     latestRun = modelRuns[modelID][:2]
     latestDate = modelRuns[modelID][3:]
     stamp = latestDate[:10] + ":" + latestRun
+
+    # Determine increment to add to get missed runs
+    if "uk" in modelID:
+        runIncrement = 1
+        maxRuns = 24 
+    else:
+        runIncrement = 6
+        maxRuns = 4
+
+
     if not os.path.exists(baseFolder + LATEST_FOLDER + "/" + orderName + ".txt"):
         # File not there - so write it and return latest run
+        # No attempt to get backdated runs
         rf = open(baseFolder + LATEST_FOLDER + "/" + orderName + ".txt", "w")
         rf.write(stamp)
         rf.close()
@@ -373,9 +419,25 @@ def get_latest_run(modelID, orderName, modelRuns):
         rf.close()
         # Check to see if the latest is later than the last run
         if stamp > laststamp:
-            rf = open(baseFolder + LATEST_FOLDER + "/" + orderName + ".txt", "w")
+            rf = open(baseFolder + LATEST_FOLDER +
+                      "/" + orderName + ".txt", "w")
             rf.write(stamp)
             rf.close()
+            # Now work out what runs we've missed
+            stampDate = datetime.strptime(stamp,"%Y-%m-%d:%H")
+            laststampDate = datetime.strptime(laststamp,"%Y-%m-%d:%H")
+            latestRun = ""
+            # Need to check we aren't asking for too many dates
+            while laststampDate < stampDate:
+                laststampDate = laststampDate + timedelta(hours=runIncrement)
+                newHour = laststampDate.strftime("%H")
+                if latestRun == "":
+                    latestRun = newHour
+                else:
+                    latestRun = latestRun + "," + newHour
+            # OK if it was a long time ago this could have led to too many runs
+            latestRun = latestRun[((-1)*maxRuns*3)+1:]
+
         else:
             latestRun = "done" + ":" + latestRun
 
@@ -416,7 +478,8 @@ def get_model_runs(baseUrl, requestHeaders, modelList):
 
             rundetails = reqr.json()
             rawlatest = rundetails["completeRuns"]
-            modelRuns[model] = rawlatest[0]["run"] + ":" + rawlatest[0]["runDateTime"]
+            modelRuns[model] = rawlatest[0]["run"] + \
+                ":" + rawlatest[0]["runDateTime"]
             break
 
     return modelRuns
@@ -569,7 +632,7 @@ if __name__ == "__main__":
         "--retryperiod",
         action="store",
         dest="retryperiod",
-        default="300",
+        default="30",
         help="Retry delay in seconds.",
     )
     parser.add_argument(
@@ -596,6 +659,14 @@ if __name__ == "__main__":
         default="",
         help="Use direct API Key when not via APIM.",
     )
+    parser.add_argument(
+        "-b",
+        "--backdated",
+        action="store",
+        dest="backdatedDate",
+        default="",
+        help="OPTIONAL: Date in YYYYMMDD to explicitly attempt to get files from.",
+    )
 
     args = parser.parse_args()
 
@@ -614,16 +685,25 @@ if __name__ == "__main__":
     debugMode = args.debugmode
     baseFolder = args.location
     apikey = args.apikey
+    backdatedDate = args.backdatedDate
 
     printUrl = args.printurl
+
+    thereWereErrors = False
 
     if debugMode == True:
         print("WARNING: As we are in debug mode setting workers to one.")
         numThreads = 1
 
+    # Check for backdatedDate and latest - incompatible
+
+    if backdatedDate != "" and orderRuns == "latest":
+        print("ERROR: You cannot request the latest run and pass a specific date to download.")
+        sys.exit()
+
     if args.ordersToDownload == "":
         print("ERROR: You must pass an orders list to download.")
-        exit()
+        sys.exit()
     else:
         ordersToDownload = args.ordersToDownload.lower().split(",")
 
@@ -634,10 +714,11 @@ if __name__ == "__main__":
     # Client ID and Sectet must be supplied
     if (clientId == "" or secret == "") and apikey == "":
         print("ERROR: IBM client and secret must be supplied.")
-        exit()
+        sys.exit()
 
     if apikey == "":
-        requestHeaders = {"x-ibm-client-id": clientId, "x-ibm-client-secret": secret}
+        requestHeaders = {"x-ibm-client-id": clientId,
+                          "x-ibm-client-secret": secret}
     else:
         requestHeaders = {"x-api-key": apikey}
 
@@ -647,8 +728,9 @@ if __name__ == "__main__":
                 baseFolder = baseFolder + "/"
             os.makedirs(baseFolder, exist_ok=True)
         except OSError as error:
-            print("ERROR: Base folder", baseFolder, "cannot be accessed or created.")
-            exit()
+            print("ERROR: Base folder", baseFolder,
+                  "cannot be accessed or created.")
+            sys.exit()
 
     os.makedirs(baseFolder + ROOT_FOLDER, exist_ok=True)
     os.makedirs(baseFolder + LATEST_FOLDER, exist_ok=True)
@@ -668,7 +750,7 @@ if __name__ == "__main__":
         print(
             "WARNING: You have no orders active on Weather DataHub.  Please confirm some orders and try again."
         )
-        exit()
+        sys.exit()
 
     # For each of the orders to download get the model and add to my model list
     myModelList = []
@@ -687,7 +769,7 @@ if __name__ == "__main__":
             "ERROR: No models could be extracted from the orders to process: "
             + str(ordersToDownload)
         )
-        exit()
+        sys.exit()
 
     myModelRuns = get_model_runs(baseUrl, requestHeaders, myModelList)
 
@@ -726,8 +808,9 @@ if __name__ == "__main__":
                         + modelToGet
                         + " is so terminating!"
                     )
-                    exit()
-                runsToDownload = get_latest_run(modelToGet, orderName, myModelRuns)
+                    sys.exit(7)
+                runsToDownload = get_latest_run(
+                    modelToGet, orderName, myModelRuns)
                 if runsToDownload[:4] == "done":
                     if verbose:
                         print(
@@ -736,17 +819,22 @@ if __name__ == "__main__":
                             + " already!"
                         )
                     continue
-                # Do I want this run?
+                # Do I want these runs?
                 finalRuns = []
-                runWanted = run_wanted(myOrders, orderName, runsToDownload)
-                if runWanted and verbose:
-                    print("This run " + runsToDownload + " is wanted.")
-                else:
-                    if verbose:
-                        print("This run " + runsToDownload + " is not wanted")
-                    continue
-                runsToDownload = runsToDownload.split(",")
-                finalRuns.append(runsToDownload)
+                runsToCheck = runsToDownload.split(",")
+                for checkRun in runsToCheck:
+
+                    runWanted = run_wanted(myOrders, orderName, checkRun)
+                    if runWanted and verbose:
+                        print("This run " + checkRun + " is wanted.")
+                        finalRuns.append(checkRun)
+                    else:
+                        if verbose:
+                            print("This run " + checkRun + " is not wanted")
+                        continue
+                
+                runsToDownload = finalRuns
+                
 
             else:
                 runsToDownload = orderRuns.split(",")
@@ -787,7 +875,10 @@ if __name__ == "__main__":
             ordersfound = True
 
             # Break down the files in to those needed for each run
-            filesByRun = get_files_by_run(order, runsToDownload, numFilesPerOrder)
+            filesByRun = get_files_by_run(
+                order, runsToDownload, numFilesPerOrder)
+
+            #pprint.pprint(filesByRun)
 
             # Now queue up tasks to down load each file
             for run in runsToDownload:
@@ -818,6 +909,7 @@ if __name__ == "__main__":
                         "folder": folder,
                         "responseLog": responseLog,
                         "downloadErrorLog": downloadErrorLog,
+                        "backdatedDate": backdatedDate,
                     }
                     taskQueue.put(downloadTask)
 
@@ -888,7 +980,7 @@ if __name__ == "__main__":
                 totalFailures,
                 "is more than the 100 limit can't recover.",
             )
-            exit()
+            sys.exit(2)
 
         if totalFailures == totalFiles:
             print(
@@ -896,13 +988,13 @@ if __name__ == "__main__":
                 totalFiles,
                 "files - terminating program.",
             )
-            exit()
+            sys.exit(3)
 
         if failureRate > 50.0 and totalFailures > 50:
             print(
                 "ERROR: failure rate > 50 percent and more than 20 failures - terminating."
             )
-            exit()
+            sys.exit(4)
 
         # I can now retry
         # Wait for the asked time
@@ -960,6 +1052,7 @@ if __name__ == "__main__":
                     False,
                     retryFile["folder"],
                     startTime,
+                    backdatedDate
                 )
                 fileSize = os.path.getsize(downloadResp[1])
 
@@ -994,7 +1087,11 @@ if __name__ == "__main__":
                         + "\n"
                     )
                 errfile.close()
+                thereWereErrors=True
                 stillInError.append(retryFile.copy())
+    
+    if thereWereErrors == True:
+        print("ERROR: something remains in error.")
+        sys.exit(10)
 
-
-# End of python program
+# End of python program.
