@@ -91,6 +91,8 @@ The default is to use the production URL so this does not need to be passed unle
 
 The --runs latest will return the latest set of files available for a particular order.  So for example if you have a global order set for runs 00 and 12 (i.e. the full runs) calling the program with the latest parameter will ensure you only get what you want, once, despite how ofted you call the program.  The latest/ folder will store the latest files for every order - these can be edited with a text editor (or deleted) to re-enable a run.
 
+If you call the download once a day all missing runs asked for on the order will be retrieved to catch up to a consistent position.
+
 ```
 --retry
 ```
