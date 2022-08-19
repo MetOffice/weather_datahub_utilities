@@ -354,18 +354,6 @@ def write_summary(responseLog, fileName, sstartTime):
             )
 
 
-def join_files(responseLog, joinedFileName):
-
-    with open(joinedFileName, "wb") as outfile:
-        for f in responseLog:
-
-            with open(f["file"], "rb") as infile:
-                while True:
-                    chunk = infile.read(8192)
-                    if not chunk:
-                        break
-                    outfile.write(chunk)
-            os.remove(f["file"])
 
 
 def get_my_orders(baseUrl, requestHeaders):
@@ -580,14 +568,6 @@ if __name__ == "__main__":
         help="Number of workers used to perform downloads. Defaults to 4.",
     )
     parser.add_argument(
-        "-j",
-        "--join",
-        action="store_true",
-        dest="joinFiles",
-        default=False,
-        help="If present, all the downloaded files will be concatenated together.",
-    )
-    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -679,7 +659,6 @@ if __name__ == "__main__":
     folderdate = args.folderdate
     numThreads = args.workers
     myModelList = args.modellist
-    joinFiles = args.joinFiles
     retry = args.retry
     retryperiod = args.retryperiod
     debugMode = args.debugmode
@@ -707,7 +686,6 @@ if __name__ == "__main__":
     else:
         ordersToDownload = args.ordersToDownload.lower().split(",")
 
-    joinFiles = False
     numFilesPerOrder = 0
     guidFileNames = False
 
