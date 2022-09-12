@@ -196,6 +196,7 @@ def download_worker():
                                + downloadTask["fileId"]
                                + "/data",
                         "fileid": downloadTask["fileId"],
+                        "landLayer": landLayer,
                         "currentTime": current_time,
                         "ordername": downloadTask["orderName"],
                         "folder": downloadTask["folder"],
@@ -531,7 +532,7 @@ if __name__ == "__main__":
         "--retryperiod",
         action="store",
         dest="retryperiod",
-        default="300",
+        default="30",
         help="Retry delay in seconds.",
     )
     parser.add_argument(
