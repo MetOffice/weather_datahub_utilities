@@ -72,10 +72,10 @@ The utility will follow any re-directs and thus supports redirected delivery.
 | --location       | -l| The base folder to store files   | --location C:\Data                                |         | 
 | --modellist      | -m| Pass the list of models to use   | --modellist mo-global,m-uk-latlon                 |         | 
 | --retry          | -a| Retry failures from each order   | --retry                                           | False   | 
-| --retryperiod    | -p| Seconds to wait for retry        | --retryperiod 30                                  | 300     | 
+| --retryperiod    | -p| Seconds to wait for retry        | --retryperiod 20                                  | 30      | 
 | --debug          | -z| Put into debug mode              | --debug                                           | False   | 
-| --perfmode       | -y| Turn on API performance checking | For example: --perfmode                                        | False   | 
-| --perftime       | -t| Length of MDDA calls to report   | For example: --perftime 3                                      | 10     | 
+| --perfmode       | -y| Turn on API performance checking | For example: --perfmode                           | False   | 
+| --perftime       | -t| Length of MDDA calls to report   | For example: --perftime 3                         | 10     | 
 | --printurl       | -x| Print URLs as accessed/redirected | --printurl                                       | False   | 
 
 
