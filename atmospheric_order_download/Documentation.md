@@ -74,6 +74,8 @@ The utility will follow any re-directs and thus supports redirected delivery.
 | --retry          | -a| Retry failures from each order   | --retry                                           | False   | 
 | --retryperiod    | -p| Seconds to wait for retry        | --retryperiod 30                                  | 300     | 
 | --debug          | -z| Put into debug mode              | --debug                                           | False   | 
+| --perfmode       | -y| Turn on API performance checking | For example: --perfmode                                        | False   | 
+| --perftime       | -t| Length of MDDA calls to report   | For example: --perftime 3                                      | 10     | 
 | --printurl       | -x| Print URLs as accessed/redirected | --printurl                                       | False   | 
 
 
@@ -121,3 +123,15 @@ This creates an additional folder in the downloaded/ area called YYYYMMDDhhmm_RR
  
 This will allow the user to interactively fail a file receive to test the retry functionality and will be used for other debug style functions as needed. 
 Limits the workers to one and you can carry on at any point by entering 'go'.
+
+```
+--perfmode
+```
+
+This turns on a performance monitoring mode that allows the user to see the times various API calls take.  And can report on particularly slow downloads ot data files.
+
+```
+--perftime
+```
+
+Sets the download time for individual files after which the time taken is reported.  Useful for diagnosing network issues.
