@@ -16,12 +16,14 @@ import queue
 import threading
 import uuid
 import pprint
+import inspect
 
 # Example code to download GRIB data files from the Met Office Weather DataHub via API calls
 
-MODEL_LIST = ["mo-global", "mo-uk", "mo-uk-latlon", "mo-mogrepsg"]
+MODEL_LIST = ["mo-global", "mo-uk", "mo-uk-latlon", "mo-mogrepsg","mo-mogrepsuk"]
 BASE_URL = "https://api-metoffice.apiconnect.ibmcloud.com/metoffice/production/1.0.0"
 debugMode = False
+perfMode = False
 printUrl = False
 retryCount = 3
 
@@ -29,6 +31,9 @@ retryCount = 3
 def get_order_details(
     baseUrl, requestHeaders, orderName, useEnhancedApi, runsToDownload
 ):
+    if perfMode:
+        print("PM ",inspect.stack()[0][3]," started")
+        pmstart = datetime.now()
 
     details = None
 
@@ -69,7 +74,13 @@ def get_order_details(
         sys.exit(6)
     else:
         details = req.json()
+    
+    if perfMode:
+        pmend = datetime.now()
+        delta = round((pmend - pmstart).total_seconds() * 1000)
+        print("PM ",inspect.stack()[0][3]," executed in ",str(delta),"ms","API URL:",url)
 
+    
     return details
 
 
@@ -81,6 +92,7 @@ def get_order_file(
 
     urlMod = ""
     global debugMode
+    global perfMode
 
     if len(fileId) > 100 or guidFileNames:
         local_filename = folder + "/" + str(uuid.uuid4()) + ".grib2"
@@ -127,6 +139,9 @@ def get_order_file(
     actualHeaders = {"Accept": "application/x-grib"}
     actualHeaders.update(requestHeaders)
 
+    if perfMode:
+        pmstart3 = datetime.now()
+
     with requests.get(
         url, headers=actualHeaders, allow_redirects=True, stream=True
     ) as r:
@@ -139,6 +154,12 @@ def get_order_file(
             print("get_order_file: ", url)
             if url != r.url:
                 print("redirected to: ", r.url)
+
+        if perfMode:
+            pmend3 = datetime.now()
+            delta3 = round((pmend3 - pmstart3).total_seconds() * 1000)
+            if delta3 > int(perfTime)*1000:
+                print("PM ",url," executed in ",str(delta3)+"ms" )
 
         if r.status_code != 200:
 
@@ -358,6 +379,10 @@ def write_summary(responseLog, fileName, sstartTime):
 
 def get_my_orders(baseUrl, requestHeaders):
 
+    if perfMode:
+        print("PM ",inspect.stack()[0][3]," started")
+        pmstart = datetime.now()
+    
     ordHeaders = {"Accept": "application/json"}
     ordHeaders.update(requestHeaders)
 
@@ -375,6 +400,11 @@ def get_my_orders(baseUrl, requestHeaders):
         print("URL:", ordurl)
         sys.exit(1)
     orddetails = ordr.json()
+
+    if perfMode:
+        pmend = datetime.now()
+        delta = round((pmend - pmstart).total_seconds() * 1000)
+        print("PM ",inspect.stack()[0][3]," executed in ",str(delta),"ms","API URL:",ordurl)
 
     return orddetails
 
@@ -433,17 +463,34 @@ def get_latest_run(modelID, orderName, modelRuns):
 
 
 def get_model_runs(baseUrl, requestHeaders, modelList):
-
+    
     modelRuns = {}
+    
+    if perfMode:
+        print("PM ",inspect.stack()[0][3]," started")
+        pmstart = datetime.now()
+
+
     runHeaders = {"Accept": "application/json"}
     runHeaders.update(requestHeaders)
 
     for model in modelList:
+
+
         requrl = baseUrl + "/runs/" + model + "?sort=RUNDATETIME"
 
         for loop in range(retryCount):
+        
+            if perfMode:
+                print("PM ",inspect.stack()[0][3]," model=",model," started ")
+                pmstart2 = datetime.now()
 
             reqr = requests.get(requrl, headers=runHeaders)
+
+            if perfMode:
+                pmend2 = datetime.now()
+                delta2 = round((pmend2 - pmstart2).total_seconds() * 1000)
+                print("PM ",inspect.stack()[0][3]," model=",model," executed in ",str(delta2),"ms","API URL:",requrl)
 
             if printUrl == True:
                 print("get_model_runs: ", requrl)
@@ -469,6 +516,13 @@ def get_model_runs(baseUrl, requestHeaders, modelList):
             modelRuns[model] = rawlatest[0]["run"] + \
                 ":" + rawlatest[0]["runDateTime"]
             break
+        #endFor=True
+        
+
+    if perfMode:
+        pmend = datetime.now()
+        delta = round((pmend - pmstart).total_seconds() * 1000)
+        print("PM ",inspect.stack()[0][3]," executed in ",str(delta),"ms")
 
     return modelRuns
 
@@ -616,6 +670,14 @@ if __name__ == "__main__":
         help="Retry delay in seconds.",
     )
     parser.add_argument(
+        "-t",
+        "--perftime",
+        action="store",
+        dest="perftime",
+        default="10",
+        help="When in performance testing mode file delivery time over which it should be reported - default 10s.",
+    )
+    parser.add_argument(
         "-x",
         "--printurl",
         action="store_true",
@@ -630,6 +692,14 @@ if __name__ == "__main__":
         dest="debugmode",
         default=False,
         help="Switch to debug mode.",
+    )
+    parser.add_argument(
+        "-y",
+        "--perfmode",
+        action="store_true",
+        dest="perfmode",
+        default=False,
+        help="Switch on performance monitor.",
     )
     parser.add_argument(
         "-k",
@@ -662,6 +732,8 @@ if __name__ == "__main__":
     retry = args.retry
     retryperiod = args.retryperiod
     debugMode = args.debugmode
+    perfMode = args.perfmode
+    perfTime = args.perftime
     baseFolder = args.location
     apikey = args.apikey
     backdatedDate = args.backdatedDate
@@ -901,6 +973,11 @@ if __name__ == "__main__":
 
         if verbose:
             print("    Starting downloads")
+
+        if perfMode:
+            print("PM Download workers starting")
+            pmstart = datetime.now()
+
         for t in taskThreads:
             t.start()
 
@@ -910,6 +987,11 @@ if __name__ == "__main__":
         # Stop all the threads
         for i in range(numThreads):
             taskQueue.put(None)
+        
+        if perfMode:
+            pmend = datetime.now()
+            delta = round((pmend - pmstart).total_seconds() * 1000)
+            print("PM Download workers executed in ",str(delta),"ms")
 
         for t in taskThreads:
             t.join()
