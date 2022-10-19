@@ -52,9 +52,6 @@ def get_order_details(
         print("Plan and limit : " + req.headers["X-RateLimit-Limit"])
         print("Remaining calls: " + req.headers["X-RateLimit-Remaining"])
 
-    if req.url.find("--") != -1:
-        if verbose:
-            print("-- found in redirect: ", req.url)
 
     if printUrl == True:
         print("get_order_details: ", url)
@@ -443,7 +440,7 @@ def get_latest_run(modelID, orderName, modelRuns):
             rf.close()
             # Now work out what runs we've missed
             stampDate = datetime.strptime(stamp,"%Y-%m-%d:%H")
-            laststampDate = datetime.strptime(laststamp,"%Y-%m-%d:%H")
+            laststampDate = datetime.strptime(laststamp[:13],"%Y-%m-%d:%H")
             latestRun = ""
             # Need to check we aren't asking for too many dates
             while laststampDate < stampDate:
