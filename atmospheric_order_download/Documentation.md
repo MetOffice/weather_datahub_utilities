@@ -135,3 +135,9 @@ This turns on a performance monitoring mode that allows the user to see the time
 ```
 
 Sets the download time for individual files after which the time taken is reported.  Useful for diagnosing network issues.
+
+```
+--printurl
+```
+
+Diplays the URLs called and any redirects.  
