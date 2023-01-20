@@ -62,7 +62,7 @@ Client ID, the secret, latitude and longitude are the only mandatory parameters.
 | --client         | -c| WDH client id key                 | --client xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx    |         |  
 | --secret         | -s| WDH secret key                    | --secret xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx    |         |  
 | --latitude       | -y| Latitude of the location for the forecast  | --latitude 50.7                  |         |  
-| --longitude      | -x| Longitude of the location for the forecast         | --longitude -3.52                            | 0,6,12,18 |  
+| --longitude      | -x| Longitude of the location for the forecast         | --longitude -3.52                            |    |  
 | --metadata        | -m| Exclude parameter metadata         | --metadata true                                       | False       |  
 | --name           | -n| Include the name of the forecast location   | --name false                                            | True   | 
 
