@@ -50,94 +50,40 @@ Assuming you have completed the install of the requests package.
 
 To run:
 ```
-py cda_download.py {arguments}
+py ss_download.py {arguments}
 ```
-Client ID, the secret and orders to download are the only mandatory parameters.
-
-The utility will follow any re-directs and thus supports redirected delivery.
+Client ID, the secret, latitude and longitude are the only mandatory parameters.
 
 ## Command line options
 
 | Option           | - | Description                           | Example of use                                                    | Default |
 | ---------------- | - |--------------------------------- | ---------------------------------------------------------------|-------- |
-| --url            | -u| Service base URL                 | --url https://api-metoffice.apiconnect.ibmcloud.com/metoffice/production/1.0.0 |         |  
+| --timesteps      | -t| Frequency of timesteps            | --timesteps daily| hourly         |  
 | --client         | -c| WDH client id key                 | --client xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx    |         |  
 | --secret         | -s| WDH secret key                    | --secret xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx    |         |  
-| --orders         | -o| List of orders name to download  | --orders p3_pp_euro,p3_pp_global                  |         |  
-| --runs           | -r| List of runs to download         | --runs 00,12 or latest                            | 0,6,12,18 |  
-| --workers        | -w| Number of worker threads         | --workers 2                                       | 4       |  
-| --join           | -j| Join downloaded files together   | --join                                            | False   | 
-| --verbose        | -v| Print extra status messages      | --verbose                                         | False   | 
-| --folderdate     | -d| Add date/time/run to folder      | --folderdate                                      | False   | 
-| --location       | -l| The base folder to store files   | --location C:\Data                                |         | 
-| --modellist      | -m| Pass the list of models to use   | --modellist mo-global,m-uk-latlon                 |         | 
-| --retry          | -a| Retry failures from each order   | --retry                                           | False   | 
-| --retryperiod    | -p| Seconds to wait for retry        | --retryperiod 20                                  | 30      | 
-| --debug          | -z| Put into debug mode              | --debug                                           | False   | 
-| --perfmode       | -y| Turn on API performance checking | For example: --perfmode                           | False   | 
-| --perftime       | -t| Length of MDDA calls to report   | For example: --perftime 3                         | 10     | 
-| --printurl       | -x| Print URLs as accessed/redirected | --printurl                                       | False   | 
-
+| --latitude       | -y| Latitude of the location for the forecast  | --latitude 50.7                  |         |  
+| --longitude      | -x| Longitude of the location for the forecast         | --longitude -3.52                            | 0,6,12,18 |  
+| --metadata        | -m| Exclude parameter metadata         | --metadata true                                       | False       |  
+| --name           | -n| Include the name of the forecast location   | --name false                                            | True   | 
 
 ## Some guidance on use
 
 ```
---url 
+--timesteps 
 ```
 
-The default is to use the production URL so this does not need to be passed unless a different URL is being used.
+There are three frequencies of timesteps available - hourly, three-hourly or daily.
 
 ```
---runs latest
+--latitude
 ```
 
-The --runs latest will return the latest set of files available for a particular order.  So for example if you have a global order set for runs 00 and 12 (i.e. the full runs) calling the program with the latest parameter will ensure you only get what you want, once, despite how ofted you call the program.  The latest/ folder will store the latest files for every order - these can be edited with a text editor (or deleted) to re-enable a run.
-
-If you call the download once a day all missing runs asked for on the order will be retrieved to catch up to a consistent position.
+Provide the latitude of the location for the forecast. This should be a valid latitude, between -90 and 90. 
 
 ```
---retry
+--longitude
 ```
 
-After the initial run - any files that failed to download are added to a retry list.  If this list is too long (>100) or the fail percentage is greater than 50% and also more than 20 need to be downloaded or all files failed then the program terminates.  This is to avoid excess errors as these conditions indicate something major is likely to be wrong.
-
-Re-retrieves are attempted after the delay passed (--retryperiod) or the default 300 seconds.  The list of files retrieved second time around is added to the results/ text list and anything left still unreceived can be found in the failures/ folder.
+Provide the longitude of the location for the forecast. This should be a valid longitude, between -180 and 180. 
 
 
-```
---location
-```
-
-This is the base location where all folders to store data and reports are stored.  If not set the directory from where the program is invoked is used.
-
-
-```
---folderdate
-```
-
-This creates an additional folder in the downloaded/ area called YYYYMMDDhhmm_RR - where the RR is the run.  Within there is the normal order_RR folder.
-
-```
---debug
-```
- 
-This will allow the user to interactively fail a file receive to test the retry functionality and will be used for other debug style functions as needed. 
-Limits the workers to one and you can carry on at any point by entering 'go'.
-
-```
---perfmode
-```
-
-This turns on a performance monitoring mode that allows the user to see the times various API calls take.  And can report on particularly slow downloads ot data files.
-
-```
---perftime
-```
-
-Sets the download time for individual files after which the time taken is reported.  Useful for diagnosing network issues.
-
-```
---printurl
-```
-
-Diplays the URLs called and any redirects.  
