@@ -10,3 +10,7 @@ This is a Python script to connect to the API gateway and download GRIB2 files g
 # map_images_download (beta)
 
 This is a Python script to connect to the API gateway and download map images referencing an order previously created.  It supports multiple data streams.
+
+# site_specific_download (beta)
+
+This is a Python script to connect to the API gateway and retrieve a site-specific forecast in JSON format. 
