@@ -1,3 +1,10 @@
+# 2023 (C) Crown Copyright, Met Office. All rights reserved.
+#
+# This file is part of Weather DataHub and is released under the
+# BSD 3-Clause license.
+# See LICENSE in the root of the repository for full licensing details.
+# (c) Met Office 2023
+
 import requests
 import argparse
 import time
