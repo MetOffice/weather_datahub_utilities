@@ -74,9 +74,10 @@ The utility will follow any re-directs and thus supports redirected delivery.
 | --retry          | -a| Retry failures from each order   | --retry                                           | False   | 
 | --retryperiod    | -p| Seconds to wait for retry        | --retryperiod 20                                  | 30      | 
 | --debug          | -z| Put into debug mode              | --debug                                           | False   | 
-| --perfmode       | -y| Turn on API performance checking | For example: --perfmode                           | False   | 
-| --perftime       | -t| Length of MDDA calls to report   | For example: --perftime 3                         | 10     | 
+| --perfmode       | -y| Turn on API performance checking | --perfmode                                        | False   | 
+| --perftime       | -t| Length of MDDA calls to report   | --perftime 3                                      | 10      | 
 | --printurl       | -x| Print URLs as accessed/redirected | --printurl                                       | False   | 
+| --savefilelist   | -f| Save the file list               | --savefilelist                                    | False   |
 
 
 ## Some guidance on use
@@ -141,3 +142,9 @@ Sets the download time for individual files after which the time taken is report
 ```
 
 Diplays the URLs called and any redirects.  
+
+```
+--savefilelist
+```
+
+Save the filelist in a file called ordername_{date_time}.json.  Uses the filelists folder.
