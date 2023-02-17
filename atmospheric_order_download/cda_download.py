@@ -1,9 +1,9 @@
-# 2022 (C) Crown Copyright, Met Office. All rights reserved.
+# 2023 (C) Crown Copyright, Met Office. All rights reserved.
 #
 # This file is part of Weather DataHub and is released under the
 # BSD 3-Clause license.
 # See LICENSE in the root of the repository for full licensing details.
-# (c) Met Office 2022
+# (c) Met Office 2023
 
 import argparse
 import csv
@@ -17,12 +17,11 @@ import uuid
 from datetime import datetime, timedelta
 import requests
 import traceback
-import pprint
 import json
 
 # Example code to download GRIB data files from the Met Office Weather DataHub via API calls
 
-MODEL_LIST = ["mo-global", "mo-uk", "mo-uk-latlon", "mo-mogrepsg","mo-mogrepsuk"]
+MODEL_LIST = ["mo-global", "mo-uk", "mo-uk-latlon", "mo-mogrepsg", "mo-mogrepsuk"]
 BASE_URL = "https://api-metoffice.apiconnect.ibmcloud.com/metoffice/production/1.0.0"
 debugMode = False
 perfMode = False
@@ -34,7 +33,7 @@ def get_order_details(
     baseUrl, requestHeaders, orderName, useEnhancedApi, runsToDownload
 ):
     if perfMode:
-        print("PM ",inspect.stack()[0][3]," started")
+        print("PM ", inspect.stack()[0][3], " started")
         pmstart = datetime.now()
 
     details = None
@@ -63,12 +62,11 @@ def get_order_details(
             print("EXCEPTION: get_order_details failed second time")
             print(exctwo)
             sys.exit(8)
-#           raise SystemError(exctwo)
+    #           raise SystemError(exctwo)
 
     if verbose and apikey == "":
         print("Plan and limit : " + req.headers["X-RateLimit-Limit"])
         print("Remaining calls: " + req.headers["X-RateLimit-Remaining"])
-
 
     if printUrl == True:
         print("get_order_details: ", url)
@@ -82,26 +80,39 @@ def get_order_details(
             " status code: ",
             req.status_code,
         )
-        print("Headers: ",req.headers)
-        print("Text: ",req.text)
+        print("Headers: ", req.headers)
+        print("Text: ", req.text)
         print("URL:", url)
         sys.exit(6)
     else:
         details = req.json()
-    
+
     if perfMode:
         pmend = datetime.now()
         delta = round((pmend - pmstart).total_seconds() * 1000)
-        print("PM ",inspect.stack()[0][3]," executed in ",str(delta),"ms","API URL:",url)
+        print(
+            "PM ",
+            inspect.stack()[0][3],
+            " executed in ",
+            str(delta),
+            "ms",
+            "API URL:",
+            url,
+        )
 
-    
     return details
 
 
 def get_order_file(
-    baseUrl, requestHeaders, orderName, fileId, guidFileNames, folder, start, backdatedDate
+    baseUrl,
+    requestHeaders,
+    orderName,
+    fileId,
+    guidFileNames,
+    folder,
+    start,
+    backdatedDate,
 ):
-
     # If file id is too long or random file names required generate a uuid for the file name
 
     urlMod = ""
@@ -121,10 +132,7 @@ def get_order_file(
         fileId = fileId.replace("+", backdatedDate)
         if debugMode == True:
             print("DEBUG: New fileID is: " + fileId)
-        
 
-
-        
     url = baseUrl + "/orders/" + orderName + "/latest/" + fileId + "/data"
 
     if debugMode == True:
@@ -159,9 +167,8 @@ def get_order_file(
     with requests.get(
         url, headers=actualHeaders, allow_redirects=True, stream=True
     ) as r:
-
         if r.url.find("--") != -1:
-            if verbose: 
+            if verbose:
                 print("-- found in redirect: ", r.url)
 
         if printUrl == True:
@@ -172,19 +179,17 @@ def get_order_file(
         if perfMode:
             pmend3 = datetime.now()
             delta3 = round((pmend3 - pmstart3).total_seconds() * 1000)
-            if delta3 > int(perfTime)*1000:
-                print("PM ",url," executed in ",str(delta3)+"ms" )
+            if delta3 > int(perfTime) * 1000:
+                print("PM ", url, " executed in ", str(delta3) + "ms")
 
         if r.status_code != 200:
-
             print("ERROR: File download failed.")
-            print("Headers: ",r.headers)
-            print("Text: ",r.text)
+            print("Headers: ", r.headers)
+            print("Text: ", r.text)
             print("URL:", url)
-            print("Redirected URL:",r.url)
+            print("Redirected URL:", r.url)
 
-            raise Exception("HTTP Reason and Status: " +
-                            r.reason, r.status_code)
+            raise Exception("HTTP Reason and Status: " + r.reason, r.status_code)
 
         # Record time to first byte
         ttfb = start + r.elapsed.total_seconds()
@@ -200,11 +205,9 @@ def get_order_file(
 
 
 def get_files_by_run(order, runsToDownload, numFilesPerOrder):
-
     # Break down the files in to those needed for each run
     filesByRun = {}
     for run in runsToDownload:
-
         filesByRun[run] = []
         fc = 0
         for f in order["orderDetails"]["files"]:
@@ -219,13 +222,10 @@ def get_files_by_run(order, runsToDownload, numFilesPerOrder):
 
 
 def download_worker():
-
     if taskQueue:
-
         while True:
             downloadTask = taskQueue.get()
             if downloadTask is None:
-
                 break
 
             current_time = datetime.now().strftime("%H-%M-%S-%f")
@@ -244,7 +244,7 @@ def download_worker():
                     downloadTask["guidFileNames"],
                     downloadTask["folder"],
                     startTime,
-                    downloadTask["backdatedDate"]
+                    downloadTask["backdatedDate"],
                 )
                 timeToFirstByte = round((downloadResp[0] - startTime), 2)
                 downloadedFile = downloadResp[1]
@@ -312,12 +312,10 @@ def download_worker():
 
 
 def write_failures(downloadErrorLog, fileName):
-
     if len(downloadErrorLog) == 0:
         return
 
     with open(fileName, "w") as failurefile:
-
         for line in downloadErrorLog:
             failurefile.write(line["URL"] + "\n")
 
@@ -325,14 +323,12 @@ def write_failures(downloadErrorLog, fileName):
 
 
 def write_summary(responseLog, fileName, sstartTime):
-
     endTime = datetime.now()
 
     if len(responseLog) == 0:
         return
 
     with open(fileName, "w", newline="") as csvfile:
-
         fileSizeTotal = 0
         index = 0
 
@@ -392,14 +388,11 @@ def write_summary(responseLog, fileName, sstartTime):
             )
 
 
-
-
 def get_my_orders(baseUrl, requestHeaders):
-
     if perfMode:
-        print("PM ",inspect.stack()[0][3]," started")
+        print("PM ", inspect.stack()[0][3], " started")
         pmstart = datetime.now()
-    
+
     ordHeaders = {"Accept": "application/json"}
     ordHeaders.update(requestHeaders)
 
@@ -421,7 +414,7 @@ def get_my_orders(baseUrl, requestHeaders):
             print("EXCEPTION: get_my_orders failed second time")
             print(exctwo)
             sys.exit(8)
-#           raise SystemError(exctwo)
+    #           raise SystemError(exctwo)
 
     if printUrl == True:
         print("get_my_orders: ", ordurl)
@@ -429,30 +422,37 @@ def get_my_orders(baseUrl, requestHeaders):
             print("redirected to: ", ordr.url)
 
     if ordr.status_code != 200:
-        print("ERROR:  Unable to get my orders list. Status code: ", ordr.status_code)            
-        print("Headers: ",ordr.headers)
-        print("Text: ",ordr.text)
+        print("ERROR:  Unable to get my orders list. Status code: ", ordr.status_code)
+        print("Headers: ", ordr.headers)
+        print("Text: ", ordr.text)
         print("URL:", ordurl)
         sys.exit(1)
 
     try:
-       orddetails = ordr.json()
+        orddetails = ordr.json()
     except Exception as ordexception:
-       print("ERROR: Something went wrong in ordr.json() in get_my_orders.")
-       print(ordexception)
-       print("Content:", ordr.content)
-       sys.exit(1)
+        print("ERROR: Something went wrong in ordr.json() in get_my_orders.")
+        print(ordexception)
+        print("Content:", ordr.content)
+        sys.exit(1)
 
     if perfMode:
         pmend = datetime.now()
         delta = round((pmend - pmstart).total_seconds() * 1000)
-        print("PM ",inspect.stack()[0][3]," executed in ",str(delta),"ms","API URL:",ordurl)
+        print(
+            "PM ",
+            inspect.stack()[0][3],
+            " executed in ",
+            str(delta),
+            "ms",
+            "API URL:",
+            ordurl,
+        )
 
     return orddetails
 
 
 def get_latest_run(modelID, orderName, modelRuns):
-
     latestRun = modelRuns[modelID][:2]
     latestDate = modelRuns[modelID][3:]
     stamp = latestDate[:10] + ":" + latestRun
@@ -460,11 +460,10 @@ def get_latest_run(modelID, orderName, modelRuns):
     # Determine increment to add to get missed runs
     if "uk" in modelID:
         runIncrement = 1
-        maxRuns = 24 
+        maxRuns = 24
     else:
         runIncrement = 6
         maxRuns = 4
-
 
     if not os.path.exists(baseFolder + LATEST_FOLDER + "/" + orderName + ".txt"):
         # File not there - so write it and return latest run
@@ -480,10 +479,10 @@ def get_latest_run(modelID, orderName, modelRuns):
         # Check to see if the latest is later than the last run
         if stamp > laststamp:
             # This is the place where we write the updated latest file - now moved to end of cycle
-            
+
             # Now work out what runs we've missed
-            stampDate = datetime.strptime(stamp,"%Y-%m-%d:%H")
-            laststampDate = datetime.strptime(laststamp[:13],"%Y-%m-%d:%H")
+            stampDate = datetime.strptime(stamp, "%Y-%m-%d:%H")
+            laststampDate = datetime.strptime(laststamp[:13], "%Y-%m-%d:%H")
             latestRun = ""
             # Need to check we aren't asking for too many dates
             while laststampDate < stampDate:
@@ -494,7 +493,7 @@ def get_latest_run(modelID, orderName, modelRuns):
                 else:
                     latestRun = latestRun + "," + newHour
             # OK if it was a long time ago this could have led to too many runs
-            latestRun = latestRun[((-1)*maxRuns*3)+1:]
+            latestRun = latestRun[((-1) * maxRuns * 3) + 1 :]
 
         else:
             latestRun = "done" + ":" + latestRun
@@ -503,26 +502,21 @@ def get_latest_run(modelID, orderName, modelRuns):
 
 
 def get_model_runs(baseUrl, requestHeaders, modelList):
-    
     modelRuns = {}
-    
-    if perfMode:
-        print("PM ",inspect.stack()[0][3]," started")
-        pmstart = datetime.now()
 
+    if perfMode:
+        print("PM ", inspect.stack()[0][3], " started")
+        pmstart = datetime.now()
 
     runHeaders = {"Accept": "application/json"}
     runHeaders.update(requestHeaders)
 
     for model in modelList:
-
-
         requrl = baseUrl + "/runs/" + model + "?sort=RUNDATETIME"
 
         for loop in range(retryCount):
-        
             if perfMode:
-                print("PM ",inspect.stack()[0][3]," model=",model," started ")
+                print("PM ", inspect.stack()[0][3], " model=", model, " started ")
                 pmstart2 = datetime.now()
 
             try:
@@ -539,15 +533,23 @@ def get_model_runs(baseUrl, requestHeaders, modelList):
                 except Exception as exctwo:
                     print("EXCEPTION: get_model_runs failed second time")
                     print(exctwo)
-#                   raise SystemError(exctwo)
+                    #                   raise SystemError(exctwo)
                     sys.exit(9)
-
-
 
             if perfMode:
                 pmend2 = datetime.now()
                 delta2 = round((pmend2 - pmstart2).total_seconds() * 1000)
-                print("PM ",inspect.stack()[0][3]," model=",model," executed in ",str(delta2),"ms","API URL:",requrl)
+                print(
+                    "PM ",
+                    inspect.stack()[0][3],
+                    " model=",
+                    model,
+                    " executed in ",
+                    str(delta2),
+                    "ms",
+                    "API URL:",
+                    requrl,
+                )
 
             if printUrl == True:
                 print("get_model_runs: ", requrl)
@@ -570,22 +572,19 @@ def get_model_runs(baseUrl, requestHeaders, modelList):
 
             rundetails = reqr.json()
             rawlatest = rundetails["completeRuns"]
-            modelRuns[model] = rawlatest[0]["run"] + \
-                ":" + rawlatest[0]["runDateTime"]
+            modelRuns[model] = rawlatest[0]["run"] + ":" + rawlatest[0]["runDateTime"]
             break
-        #endFor=True
-        
+        # endFor=True
 
     if perfMode:
         pmend = datetime.now()
         delta = round((pmend - pmstart).total_seconds() * 1000)
-        print("PM ",inspect.stack()[0][3]," executed in ",str(delta),"ms")
+        print("PM ", inspect.stack()[0][3], " executed in ", str(delta), "ms")
 
     return modelRuns
 
 
 def run_wanted(allorders, ordername, latestrun):
-
     result = False
     for ords in allorders["orders"]:
         if ords["orderId"] == ordername:
@@ -598,7 +597,6 @@ def run_wanted(allorders, ordername, latestrun):
 
 
 def order_exists(allorders, ordername):
-
     result = False
     for ords in allorders["orders"]:
         if ords["orderId"] == ordername:
@@ -609,7 +607,6 @@ def order_exists(allorders, ordername):
 
 
 def get_model_from_order(allorders, ordername):
-
     result = "Not found"
     for ords in allorders["orders"]:
         if ords["orderId"] == ordername:
@@ -620,7 +617,6 @@ def get_model_from_order(allorders, ordername):
 
 
 if __name__ == "__main__":
-
     ROOT_FOLDER = "downloaded"
     LATEST_FOLDER = "latest"
     RESULTS_FOLDER = "results"
@@ -815,7 +811,9 @@ if __name__ == "__main__":
     # Check for backdatedDate and latest - incompatible
 
     if backdatedDate != "" and orderRuns == "latest":
-        print("ERROR: You cannot request the latest run and pass a specific date to download.")
+        print(
+            "ERROR: You cannot request the latest run and pass a specific date to download."
+        )
         sys.exit()
 
     if args.ordersToDownload == "":
@@ -833,8 +831,7 @@ if __name__ == "__main__":
         sys.exit()
 
     if apikey == "":
-        requestHeaders = {"x-ibm-client-id": clientId,
-                          "x-ibm-client-secret": secret}
+        requestHeaders = {"x-ibm-client-id": clientId, "x-ibm-client-secret": secret}
     else:
         requestHeaders = {"x-api-key": apikey}
 
@@ -844,8 +841,7 @@ if __name__ == "__main__":
                 baseFolder = baseFolder + "/"
             os.makedirs(baseFolder, exist_ok=True)
         except OSError as error:
-            print("ERROR: Base folder", baseFolder,
-                  "cannot be accessed or created.")
+            print("ERROR: Base folder", baseFolder, "cannot be accessed or created.")
             sys.exit()
 
     os.makedirs(baseFolder + ROOT_FOLDER, exist_ok=True)
@@ -899,7 +895,6 @@ if __name__ == "__main__":
 
     # Process selected orders, generating tasks for the worker to actually download the file.
     for orderName in ordersToDownload:
-
         initTime = datetime.now()
 
         responseLog = []
@@ -925,8 +920,7 @@ if __name__ == "__main__":
                         + " is so terminating!"
                     )
                     sys.exit(7)
-                runsToDownload = get_latest_run(
-                    modelToGet, orderName, myModelRuns)
+                runsToDownload = get_latest_run(modelToGet, orderName, myModelRuns)
                 if runsToDownload[:4] == "done":
                     if verbose:
                         print(
@@ -939,7 +933,6 @@ if __name__ == "__main__":
                 finalRuns = []
                 runsToCheck = runsToDownload.split(",")
                 for checkRun in runsToCheck:
-
                     runWanted = run_wanted(myOrders, orderName, checkRun)
                     if runWanted and verbose:
                         print("This run " + checkRun + " is wanted.")
@@ -948,9 +941,8 @@ if __name__ == "__main__":
                         if verbose:
                             print("This run " + checkRun + " is not wanted")
                         continue
-                
+
                 runsToDownload = finalRuns
-                
 
             else:
                 runsToDownload = orderRuns.split(",")
@@ -980,32 +972,33 @@ if __name__ == "__main__":
             baseUrl, requestHeaders, orderName, useEnhancedApi, runsToDownload
         )
         if order != None:
-
             # Create queue and threads for processing downloads
             taskQueue = queue.Queue()
             taskThreads = []
             for i in range(numThreads):
                 t = threading.Thread(target=download_worker)
                 taskThreads.append(t)
-            # End of set up threadspprint
+            # End of set up threads
             ordersfound = True
 
             # Break down the files in to those needed for each run
-            filesByRun = get_files_by_run(
-                order, runsToDownload, numFilesPerOrder)
+            filesByRun = get_files_by_run(order, runsToDownload, numFilesPerOrder)
 
             if saveFileList:
                 filelistFilename = (
-                    baseFolder + "filelists/filelist-" + orderName + "-" + myTimeStamp + ".json"
+                    baseFolder
+                    + "filelists/filelist-"
+                    + orderName
+                    + "-"
+                    + myTimeStamp
+                    + ".json"
                 )
                 os.makedirs(os.path.dirname(filelistFilename), exist_ok=True)
                 with open(filelistFilename, "a") as flistFile:
                     json.dump(order, flistFile, indent=4, sort_keys=True)
 
-
             # Now queue up tasks to down load each file
             for run in runsToDownload:
-
                 if folderdate == True:
                     folder = (
                         baseFolder
@@ -1060,11 +1053,11 @@ if __name__ == "__main__":
         # Stop all the threads
         for i in range(numThreads):
             taskQueue.put(None)
-        
+
         if perfMode:
             pmend = datetime.now()
             delta = round((pmend - pmstart).total_seconds() * 1000)
-            print("PM Download workers executed in ",str(delta),"ms")
+            print("PM Download workers executed in ", str(delta), "ms")
 
         for t in taskThreads:
             t.join()
@@ -1092,18 +1085,17 @@ if __name__ == "__main__":
 
         if verbose and len(responseLog) > 0:
             print("    Created summary: " + summaryFileName)
-            print(" Runs to download",runsToDownload,myModelRuns,orderName )
+            print(" Runs to download", runsToDownload, myModelRuns, orderName)
 
         # As we've got this far probably safe to update the 'latest' file if we are in latest mode
         if orderRuns == "latest":
             latestRun = myModelRuns[modelToGet][:2]
             latestDate = myModelRuns[modelToGet][3:]
             stamp = latestDate[:10] + ":" + latestRun
-            rf = open(baseFolder + LATEST_FOLDER +
-                      "/" + orderName + ".txt", "w")
+            rf = open(baseFolder + LATEST_FOLDER + "/" + orderName + ".txt", "w")
             rf.write(stamp)
             rf.close()
-  
+
     # End of order processing loop
 
     if verbose:
@@ -1196,7 +1188,7 @@ if __name__ == "__main__":
                     False,
                     retryFile["folder"],
                     startTime,
-                    backdatedDate
+                    backdatedDate,
                 )
                 fileSize = os.path.getsize(downloadResp[1])
 
@@ -1231,9 +1223,9 @@ if __name__ == "__main__":
                         + "\n"
                     )
                 errfile.close()
-                thereWereErrors=True
+                thereWereErrors = True
                 stillInError.append(retryFile.copy())
-    
+
     if thereWereErrors == True:
         print("ERROR: something remains in error.")
         sys.exit(10)
