@@ -30,7 +30,7 @@ retryCount = 3
 
 
 def get_order_details(
-    baseUrl, requestHeaders, orderName, useEnhancedApi, runsToDownload
+        baseUrl, requestHeaders, orderName, useEnhancedApi, runsToDownload
 ):
     if perfMode:
         print("PM ", inspect.stack()[0][3], " started")
@@ -104,14 +104,14 @@ def get_order_details(
 
 
 def get_order_file(
-    baseUrl,
-    requestHeaders,
-    orderName,
-    fileId,
-    guidFileNames,
-    folder,
-    start,
-    backdatedDate,
+        baseUrl,
+        requestHeaders,
+        orderName,
+        fileId,
+        guidFileNames,
+        folder,
+        start,
+        backdatedDate,
 ):
     # If file id is too long or random file names required generate a uuid for the file name
 
@@ -149,13 +149,13 @@ def get_order_file(
             debugMode = False
         if debugMode == True and urlMod == "y":
             url = (
-                baseUrl
-                + "/orders/"
-                + orderName
-                + "/latest/"
-                + fileId
-                + urlMod
-                + "/data"
+                    baseUrl
+                    + "/orders/"
+                    + orderName
+                    + "/latest/"
+                    + fileId
+                    + urlMod
+                    + "/data"
             )
 
     actualHeaders = {"Accept": "application/x-grib"}
@@ -165,7 +165,7 @@ def get_order_file(
         pmstart3 = datetime.now()
 
     with requests.get(
-        url, headers=actualHeaders, allow_redirects=True, stream=True
+            url, headers=actualHeaders, allow_redirects=True, stream=True
     ) as r:
         if r.url.find("--") != -1:
             if verbose:
@@ -257,15 +257,21 @@ def download_worker():
             completeTime = time.time()
             completeDuration = round((completeTime - startTime), 2)
 
+            # check error status
+            # if 503 -> increment count
+            #           call backoff_time_calculator() function, takes: count, returns back-off time period
+            #           time.sleep(backoff_time_calculator())
+
+
             if error:
                 downloadTask["downloadErrorLog"].append(
                     {
                         "URL": downloadTask["baseUrl"]
-                        + "/orders/"
-                        + downloadTask["orderName"]
-                        + "/latest/"
-                        + downloadTask["fileId"]
-                        + "/data",
+                               + "/orders/"
+                               + downloadTask["orderName"]
+                               + "/latest/"
+                               + downloadTask["fileId"]
+                               + "/data",
                         "fileid": downloadTask["fileId"],
                         "currentTime": current_time,
                         "ordername": downloadTask["orderName"],
@@ -388,6 +394,16 @@ def write_summary(responseLog, fileName, sstartTime):
             )
 
 
+def backoff_time_calculator(count):
+    if count <= 5:
+        return 1
+    elif count > 5 and count <= 20:
+        return count/2
+    elif count > 20 <= 30:
+        return 30
+    return 0
+
+
 def get_my_orders(baseUrl, requestHeaders):
     if perfMode:
         print("PM ", inspect.stack()[0][3], " started")
@@ -398,23 +414,43 @@ def get_my_orders(baseUrl, requestHeaders):
 
     ordurl = baseUrl + "/orders?detail=MINIMAL"
 
-    try:
-        ordr = requests.get(ordurl, headers=ordHeaders)
-        ordr.raise_for_status()
-    except Exception as exc:
-        print("EXCEPTION: get_my_orders failed first time")
-        print(traceback.format_exc())
-        print(exc)
-        time.sleep(15)
-        print("Get_my_orders: trying second time.")
+    failCount = 0
+    while True:
         try:
             ordr = requests.get(ordurl, headers=ordHeaders)
             ordr.raise_for_status()
-        except Exception as exctwo:
-            print("EXCEPTION: get_my_orders failed second time")
-            print(exctwo)
-            sys.exit(8)
-    #           raise SystemError(exctwo)
+        except Exception as exc:
+            print("EXCEPTION: get_my_orders failed " + str(failCount+1) + " time(s)")
+            print(traceback.format_exc())
+            print(exc)
+            failCount += 1
+            if failCount >= 30:
+                print("EXCEPTION: get_my_orders failed " + str(failCount+1) + " time(s) Will not try again.")
+                print(exc)
+                sys.exit(8)
+            time.sleep(backoff_time_calculator(failCount))
+            print("Get_my_orders: trying again.")
+            continue
+        else:
+            break
+
+    # try:
+    #     ordr = requests.get(ordurl, headers=ordHeaders)
+    #     ordr.raise_for_status()
+    # except Exception as exc:
+    #     print("EXCEPTION: get_my_orders failed first time")
+    #     print(traceback.format_exc())
+    #     print(exc)
+    #     time.sleep(15)
+    #     print("Get_my_orders: trying second time.")
+    #     try:
+    #         ordr = requests.get(ordurl, headers=ordHeaders)
+    #         ordr.raise_for_status()
+    #     except Exception as exctwo:
+    #         print("EXCEPTION: get_my_orders failed second time")
+    #         print(exctwo)
+    #         sys.exit(8)
+    # #           raise SystemError(exctwo)
 
     if printUrl == True:
         print("get_my_orders: ", ordurl)
@@ -493,7 +529,7 @@ def get_latest_run(modelID, orderName, modelRuns):
                 else:
                     latestRun = latestRun + "," + newHour
             # OK if it was a long time ago this could have led to too many runs
-            latestRun = latestRun[((-1) * maxRuns * 3) + 1 :]
+            latestRun = latestRun[((-1) * maxRuns * 3) + 1:]
 
         else:
             latestRun = "done" + ":" + latestRun
@@ -986,12 +1022,12 @@ if __name__ == "__main__":
 
             if saveFileList:
                 filelistFilename = (
-                    baseFolder
-                    + "filelists/filelist-"
-                    + orderName
-                    + "-"
-                    + myTimeStamp
-                    + ".json"
+                        baseFolder
+                        + "filelists/filelist-"
+                        + orderName
+                        + "-"
+                        + myTimeStamp
+                        + ".json"
                 )
                 os.makedirs(os.path.dirname(filelistFilename), exist_ok=True)
                 with open(filelistFilename, "a") as flistFile:
@@ -1001,15 +1037,15 @@ if __name__ == "__main__":
             for run in runsToDownload:
                 if folderdate == True:
                     folder = (
-                        baseFolder
-                        + ROOT_FOLDER
-                        + "/"
-                        + initTime.strftime("%Y%m%d%H%M_")
-                        + run
-                        + "/"
-                        + orderName
-                        + "_"
-                        + run
+                            baseFolder
+                            + ROOT_FOLDER
+                            + "/"
+                            + initTime.strftime("%Y%m%d%H%M_")
+                            + run
+                            + "/"
+                            + orderName
+                            + "_"
+                            + run
                     )
                 else:
                     folder = baseFolder + ROOT_FOLDER + "/" + orderName + "_" + run
@@ -1064,10 +1100,10 @@ if __name__ == "__main__":
 
         # Write out the summary CSV file
         summaryFileName = (
-            baseFolder + "results/summary-" + orderName + "-" + myTimeStamp + ".txt"
+                baseFolder + "results/summary-" + orderName + "-" + myTimeStamp + ".txt"
         )
         failuresFileName = (
-            baseFolder + "failures/summary-" + orderName + "-" + myTimeStamp + ".txt"
+                baseFolder + "failures/summary-" + orderName + "-" + myTimeStamp + ".txt"
         )
 
         if len(downloadErrorLog) > 0:
@@ -1151,15 +1187,15 @@ if __name__ == "__main__":
                 print("Re-trying " + retryFile["fileid"])
             startTime = time.time()
             failuresFileName = (
-                baseFolder
-                + "failures/summary-"
-                + orderName
-                + "-"
-                + myTimeStamp
-                + ".txt"
+                    baseFolder
+                    + "failures/summary-"
+                    + orderName
+                    + "-"
+                    + myTimeStamp
+                    + ".txt"
             )
             summaryFileName = (
-                baseFolder + "results/summary-" + orderName + "-" + myTimeStamp + ".txt"
+                    baseFolder + "results/summary-" + orderName + "-" + myTimeStamp + ".txt"
             )
             if deleteFile == False:
                 if os.path.isfile(failuresFileName):
