@@ -78,6 +78,8 @@ The utility will follow any re-directs and thus supports redirected delivery.
 | --perftime       | -t| Length of MDDA calls to report   | --perftime 3                                      | 10      | 
 | --printurl       | -x| Print URLs as accessed/redirected | --printurl                                       | False   | 
 | --savefilelist   | -f| Save the file list               | --savefilelist                                    | False   |
+| --verifyssloff   | -q| Turn off verify SSL in requests  | --verifyssloff                                    | False   |
+
 
 
 ## Some guidance on use

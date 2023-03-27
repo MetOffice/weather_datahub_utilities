@@ -48,7 +48,7 @@ def get_order_details(
             url = url + "&runfilter=" + runsToDownload[0]
 
     try:
-        req = requests.get(url, headers=actualHeaders, verify=False)
+        req = requests.get(url, headers=actualHeaders, verify=verifySSL)
         req.raise_for_status()
     except Exception as exc:
         print("EXCEPTION: get_order_details failed first time")
@@ -56,7 +56,7 @@ def get_order_details(
         print(exc)
         time.sleep(5)
         try:
-            req = requests.get(url, headers=actualHeaders, verify=False)
+            req = requests.get(url, headers=actualHeaders, verify=verifySSL)
             req.raise_for_status()
         except Exception as exctwo:
             print("EXCEPTION: get_order_details failed second time")
@@ -165,7 +165,7 @@ def get_order_file(
         pmstart3 = datetime.now()
 
     with requests.get(
-        url, headers=actualHeaders, allow_redirects=True, stream=True, verify=False
+        url, headers=actualHeaders, allow_redirects=True, stream=True, verify=verifySSL
     ) as r:
         if r.url.find("--") != -1:
             if verbose:
@@ -411,7 +411,7 @@ def get_my_orders(baseUrl, requestHeaders):
     failCount = 0
     while True:
         try:
-            ordr = requests.get(ordurl, headers=ordHeaders, verify=False)
+            ordr = requests.get(ordurl, headers=ordHeaders, verify=verifySSL)
             ordr.raise_for_status()
         except Exception as exc:
             print("EXCEPTION: get_my_orders failed " + str(failCount+1) + " time(s)")
@@ -532,7 +532,7 @@ def get_model_runs(baseUrl, requestHeaders, modelList):
                 pmstart2 = datetime.now()
 
             try:
-                reqr = requests.get(requrl, headers=runHeaders, verify=False)
+                reqr = requests.get(requrl, headers=runHeaders, verify=verifySSL)
                 reqr.raise_for_status()
             except Exception as exc:
                 print("EXCEPTION: get_model_runs failed first time")
@@ -540,7 +540,7 @@ def get_model_runs(baseUrl, requestHeaders, modelList):
                 print(exc)
                 time.sleep(5)
                 try:
-                    reqr = requests.get(requrl, headers=runHeaders, verify=False)
+                    reqr = requests.get(requrl, headers=runHeaders, verify=verifySSL)
                     reqr.raise_for_status()
                 except Exception as exctwo:
                     print("EXCEPTION: get_model_runs failed second time")
@@ -790,6 +790,14 @@ if __name__ == "__main__":
         default=False,
         help="Save the filelist in a file called ordername_{date_time}.json.",
     )
+    parser.add_argument(
+        "-q",
+        "--verifyssloff",
+        action="store_false",
+        dest="verifyssl",
+        default=True,
+        help="Turn off the verification of SSL on requests.get.",
+    )
 
     args = parser.parse_args()
 
@@ -811,6 +819,7 @@ if __name__ == "__main__":
     apikey = args.apikey
     backdatedDate = args.backdateddate
     saveFileList = args.savefilelist
+    verifySSL = args.verifyssl
 
     printUrl = args.printurl
 
