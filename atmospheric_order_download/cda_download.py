@@ -388,6 +388,16 @@ def write_summary(responseLog, fileName, sstartTime):
             )
 
 
+def backoff_time_calculator(count):
+    if count <= 5:
+        return 1
+    elif count > 5 and count <= 20:
+        return count/2
+    elif count > 20 <= 30:
+        return 30
+    return 0
+
+
 def get_my_orders(baseUrl, requestHeaders):
     if perfMode:
         print("PM ", inspect.stack()[0][3], " started")
@@ -398,23 +408,25 @@ def get_my_orders(baseUrl, requestHeaders):
 
     ordurl = baseUrl + "/orders?detail=MINIMAL"
 
-    try:
-        ordr = requests.get(ordurl, headers=ordHeaders, verify=False)
-        ordr.raise_for_status()
-    except Exception as exc:
-        print("EXCEPTION: get_my_orders failed first time")
-        print(traceback.format_exc())
-        print(exc)
-        time.sleep(15)
-        print("Get_my_orders: trying second time.")
+    failCount = 0
+    while True:
         try:
             ordr = requests.get(ordurl, headers=ordHeaders, verify=False)
             ordr.raise_for_status()
-        except Exception as exctwo:
-            print("EXCEPTION: get_my_orders failed second time")
-            print(exctwo)
-            sys.exit(8)
-    #           raise SystemError(exctwo)
+        except Exception as exc:
+            print("EXCEPTION: get_my_orders failed " + str(failCount+1) + " time(s)")
+            print(traceback.format_exc())
+            print(exc)
+            failCount += 1
+            if failCount >= 30:
+                print("EXCEPTION: get_my_orders failed " + str(failCount) + " time(s) Will not try again.")
+                print(exc)
+                sys.exit(8)
+            time.sleep(backoff_time_calculator(failCount))
+            print("Get_my_orders: trying again.")
+            continue
+        else:
+            break
 
     if printUrl == True:
         print("get_my_orders: ", ordurl)
