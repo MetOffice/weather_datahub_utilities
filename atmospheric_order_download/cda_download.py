@@ -419,7 +419,7 @@ def get_my_orders(baseUrl, requestHeaders):
             print(exc)
             failCount += 1
             if failCount >= 30:
-                print("EXCEPTION: get_my_orders failed " + str(failCount+1) + " time(s) Will not try again.")
+                print("EXCEPTION: get_my_orders failed " + str(failCount) + " time(s) Will not try again.")
                 print(exc)
                 sys.exit(8)
             time.sleep(backoff_time_calculator(failCount))
