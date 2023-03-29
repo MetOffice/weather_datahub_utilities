@@ -164,32 +164,40 @@ def get_order_file(
     if perfMode:
         pmstart3 = datetime.now()
 
-    with requests.get(
-        url, headers=actualHeaders, allow_redirects=True, stream=True, verify=verifySSL
-    ) as r:
-        if r.url.find("--") != -1:
-            if verbose:
-                print("-- found in redirect: ", r.url)
+        failCount = 0
+        while True:
+            with requests.get(url, headers=actualHeaders, allow_redirects=True, stream=True, verify=verifySSL) as r:
+                if r.url.find("--") != -1:
+                    if verbose:
+                        print("-- found in redirect: ", r.url)
 
-        if printUrl == True:
-            print("get_order_file: ", url)
-            if url != r.url:
-                print("redirected to: ", r.url)
+                if printUrl == True:
+                    print("get_order_file: ", url)
+                    if url != r.url:
+                        print("redirected to: ", r.url)
 
-        if perfMode:
-            pmend3 = datetime.now()
-            delta3 = round((pmend3 - pmstart3).total_seconds() * 1000)
-            if delta3 > int(perfTime) * 1000:
-                print("PM ", url, " executed in ", str(delta3) + "ms")
+                if perfMode:
+                    pmend3 = datetime.now()
+                    delta3 = round((pmend3 - pmstart3).total_seconds() * 1000)
+                    if delta3 > int(perfTime) * 1000:
+                        print("PM ", url, " executed in ", str(delta3) + "ms")
 
-        if r.status_code != 200:
-            print("ERROR: File download failed.")
-            print("Headers: ", r.headers)
-            print("Text: ", r.text)
-            print("URL:", url)
-            print("Redirected URL:", r.url)
+                if r.status_code != 200:
+                    failCount += 1
+                    print("ERROR: File download failed" + str(failCount) + "time(s).")
+                    print("Headers: ", r.headers)
+                    print("Text: ", r.text)
+                    print("URL:", url)
+                    print("Redirected URL:", r.url)
 
-            raise Exception("HTTP Reason and Status: " + r.reason, r.status_code)
+                    if failCount >= 30:
+                        raise Exception("HTTP Reason and Status: " + r.reason, r.status_code)
+
+                    time.sleep(backoff_time_calculator(failCount))
+                    continue
+
+                if r.status_code == 200:
+                    break
 
         # Record time to first byte
         ttfb = start + r.elapsed.total_seconds()
@@ -386,16 +394,6 @@ def write_summary(responseLog, fileName, sstartTime):
                 + str(numThreads)
                 + "\n"
             )
-
-
-def backoff_time_calculator(count):
-    if count <= 5:
-        return 1
-    elif count > 5 and count <= 20:
-        return count/2
-    elif count > 20 <= 30:
-        return 30
-    return 0
 
 
 def get_my_orders(baseUrl, requestHeaders):
@@ -626,6 +624,16 @@ def get_model_from_order(allorders, ordername):
             break
 
     return result
+
+
+def backoff_time_calculator(count):
+    if count <= 5:
+        return 1
+    elif count > 5 and count <= 20:
+        return count/2
+    elif count > 20 <= 30:
+        return 30
+    return 0
 
 
 if __name__ == "__main__":
