@@ -190,7 +190,7 @@ def get_order_file(
                     print("URL:", url)
                     print("Redirected URL:", r.url)
 
-                    if failCount >= 30:
+                    if failCount >= 5:
                         raise Exception("HTTP Reason and Status: " + r.reason, r.status_code)
 
                     time.sleep(backoff_time_calculator(failCount))
@@ -416,7 +416,7 @@ def get_my_orders(baseUrl, requestHeaders):
             print(traceback.format_exc())
             print(exc)
             failCount += 1
-            if failCount >= 30:
+            if failCount >= 5:
                 print("EXCEPTION: get_my_orders failed " + str(failCount) + " time(s) Will not try again.")
                 print(exc)
                 sys.exit(8)
@@ -627,13 +627,15 @@ def get_model_from_order(allorders, ordername):
 
 
 def backoff_time_calculator(count):
-    if count <= 5:
-        return 1
-    elif count > 5 and count <= 20:
-        return count/2
-    elif count > 20 <= 30:
-        return 30
-    return 0
+    match count:
+        case 1:
+            return 5
+        case 2:
+            return 10
+        case 3:
+            return 15
+        case 4:
+            return 30
 
 
 if __name__ == "__main__":
