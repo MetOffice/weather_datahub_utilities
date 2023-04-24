@@ -8,8 +8,10 @@
 import argparse
 import csv
 import inspect
+import multiprocessing
 import os
 import queue
+import signal
 import sys
 import threading
 import time
@@ -28,6 +30,20 @@ debugMode = False
 perfMode = False
 printUrl = False
 retryCount = 3
+
+
+# class WorkerThread(threading.Thread):
+#
+#     retrying = False
+#
+#     def __init__(self):
+#         super().__init__()
+#
+#     def set_retry_state(self, retrying):
+#         self.retrying = retrying
+#
+#     def get_retry_state(self):
+#         return self.retrying
 
 
 def get_order_details(
@@ -186,19 +202,31 @@ def get_order_file(
 
             if r.status_code != 200:
                 failCount += 1
-                print("ERROR: File download failed" + str(failCount) + "time(s).")
-                print("Headers: ", r.headers)
-                print("Text: ", r.text)
+                print("ERROR: File download failed " + str(failCount) + " time(s).")
+                #print("Headers: ", r.headers)
+                #print("Text: ", r.text)
                 print("URL:", url)
-                print("Redirected URL:", r.url)
+                #print("Redirected URL:", r.url)
+                print(" ")
+
+                for worker in threadStates: # e.g. [['0', False], ['1', False], ['2', False]]
+                    if not terminate:
+                        if threading.current_thread().name == worker[0]:
+                            worker[1] = True
+                            time.sleep(backoff_time_calculator(failCount, failLimit))
+                            worker[1] = False
+                    else: sys.exit(0)
 
                 if failCount >= failLimit:
                     raise Exception("HTTP Reason and Status: " + r.reason, r.status_code)
 
-                time.sleep(backoff_time_calculator(failCount, failLimit))
                 continue
 
             if r.status_code == 200:
+                for worker in threadStates:
+                    if not terminate:
+                        if threading.current_thread().name == worker[0]:
+                            worker[1] = True
                 if verbose:
                     print("Status code 200 - so breaking with this content length")
                     print(len(r.content))
@@ -209,7 +237,7 @@ def get_order_file(
 
     if os.path.exists(local_filename):
             os.remove(local_filename)
-    
+
     if verbose:
         print("Content length after breaking")
         print(len(r.content))
@@ -241,7 +269,39 @@ def get_files_by_run(order, runsToDownload, numFilesPerOrder):
     return filesByRun
 
 
+def monitor_threads():
+    global terminate
+    while True:
+        retryStates = set()
+        print("MONITOR FUNCTION!")
+        print(threadStates)
+        for worker in threadStates:
+            retryStates.add(worker[1])
+        if len(retryStates) == 1 and (True in retryStates):
+            terminate = True
+            print("ALL THREADS IN RETRY STATE!")
+            sys.exit(0)
+
+        else:
+            print("NOT ALL THREADS RETRYING!")
+            time.sleep(3)
+
+    # retry_states = set()
+    # while True:
+    #     for worker in taskThreads:
+    #         print("Thread: ", worker)
+    #         print("Alive: ", worker.is_alive())
+    #         #retry_states.add(worker.get_retry_state())
+    #
+    #     if len(retry_states) == 1 and any(retry_states):
+    #         print("All workers stuck in retry state!")
+    #         sys.exit()
+    #
+    #     time.sleep(2)
+
+
 def download_worker():
+    print(threading.current_thread())
     if taskQueue:
         while True:
             downloadTask = taskQueue.get()
@@ -1028,9 +1088,13 @@ if __name__ == "__main__":
             # Create queue and threads for processing downloads
             taskQueue = queue.Queue()
             taskThreads = []
+            threadStates = []
+            terminate = False
             for i in range(numThreads):
                 t = threading.Thread(target=download_worker)
                 taskThreads.append(t)
+                threadStates.append([t.name, False])
+            daemonThread = threading.Thread(target=monitor_threads, daemon=True)
             # End of set up threads
             ordersfound = True
 
@@ -1100,6 +1164,8 @@ if __name__ == "__main__":
         for t in taskThreads:
             t.start()
 
+        daemonThread.start()
+
         # Wait for all the queued scenarios to be processed
         taskQueue.join()
 
@@ -1114,6 +1180,7 @@ if __name__ == "__main__":
 
         for t in taskThreads:
             t.join()
+        daemonThread.join()
 
         # Write out the summary CSV file
         summaryFileName = (
