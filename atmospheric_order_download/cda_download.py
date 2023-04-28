@@ -28,6 +28,7 @@ debugMode = False
 perfMode = False
 printUrl = False
 retryCount = 3
+workerThreadsWaiting = 0
 
 
 def get_order_details(
@@ -63,7 +64,6 @@ def get_order_details(
             print("EXCEPTION: get_order_details failed second time")
             print(exctwo)
             sys.exit(8)
-    #           raise SystemError(exctwo)
 
     if verbose and apikey == "":
         print("Plan and limit : " + req.headers["X-RateLimit-Limit"])
@@ -119,6 +119,8 @@ def get_order_file(
     urlMod = ""
     global debugMode
     global perfMode
+    global workerThreadsWaiting
+
 
     if len(fileId) > 100 or guidFileNames:
         local_filename = folder + "/" + str(uuid.uuid4()) + ".grib2"
@@ -165,10 +167,19 @@ def get_order_file(
     if perfMode:
         pmstart3 = datetime.now()
 
-    failLimit = 5
+    failLimit = 30
     failCount = 0
+    MyThread = threading.current_thread()
+    MyThreadName = MyThread.name
+
+    if verbose:
+        print("get_order_file: ",MyThreadName, " Terminate value ",terminate)
+
+
     while True:
+
         with requests.get(url, headers=actualHeaders, allow_redirects=True, stream=True, verify=verifySSL) as r:
+
             if r.url.find("--") != -1:
                 if verbose:
                     print("-- found in redirect: ", r.url)
@@ -186,22 +197,32 @@ def get_order_file(
 
             if r.status_code != 200:
                 failCount += 1
-                print("ERROR: File download failed" + str(failCount) + "time(s).")
+                print("ERROR: File download failed " + str(failCount) + " time(s).")
                 print("Headers: ", r.headers)
                 print("Text: ", r.text)
                 print("URL:", url)
                 print("Redirected URL:", r.url)
 
+                if not terminate:
+                    if verbose:
+                        print("get_order_file: Not terminating")
+                    workerThreadsWaiting = workerThreadsWaiting + 1
+                    wait = backoff_time_calculator(failCount, failLimit)
+                    time.sleep(wait)
+                    workerThreadsWaiting = workerThreadsWaiting - 1
+                        
+                else: 
+                    print("get_order_file: Thread ",MyThreadName, " terminating as required by monitor")
+                    raise Exception("get_order_file: Thread ".MyThreadName, " terminating as required by monitor")
+
                 if failCount >= failLimit:
                     raise Exception("HTTP Reason and Status: " + r.reason, r.status_code)
 
-                time.sleep(backoff_time_calculator(failCount, failLimit))
                 continue
 
             if r.status_code == 200:
                 if verbose:
-                    print("Status code 200 - so breaking with this content length")
-                    print(len(r.content))
+                    print("get_order_file: Status code 200 - so breaking with this content length ",len(r.content))
                 break
 
         # Record time to first byte
@@ -209,10 +230,9 @@ def get_order_file(
 
     if os.path.exists(local_filename):
             os.remove(local_filename)
-    
+
     if verbose:
-        print("Content length after breaking")
-        print(len(r.content))
+        print("get_order_file: Content length after breaking ",len(r.content))
 
 
     with open(local_filename, "wb") as f:
@@ -241,8 +261,33 @@ def get_files_by_run(order, runsToDownload, numFilesPerOrder):
     return filesByRun
 
 
+def monitor_threads():
+    global terminate
+    global taskQueue
+
+    while True:
+        if verbose: 
+            print("monitor_threads: Worker Threads waiting: ",workerThreadsWaiting," number Threads ",numThreads)
+        if workerThreadsWaiting == numThreads:
+            if verbose: 
+                print("monitor_threads: All workers in wait state - waiting 30 seconds")
+        # Hang back for 30 seconds in case things received
+            time.sleep(30)
+            if workerThreadsWaiting == numThreads:
+                terminate = True
+                print("monitor_threads: ERROR: All workers in wait state - cannot recover -terminating ")
+                # Close the thread
+                sys.exit(9)
+        else:
+            if verbose:
+                print("monitor_threads: Not all workers in wait state")
+        time.sleep(10)
+
+
 def download_worker():
-    if taskQueue:
+    if verbose:
+        print(threading.current_thread())
+    if taskQueue: 
         while True:
             downloadTask = taskQueue.get()
             if downloadTask is None:
@@ -1027,11 +1072,17 @@ if __name__ == "__main__":
         if order != None:
             # Create queue and threads for processing downloads
             taskQueue = queue.Queue()
+
             taskThreads = []
+            terminate = False
+  
             for i in range(numThreads):
                 t = threading.Thread(target=download_worker)
                 taskThreads.append(t)
+                
+            daemonThread = threading.Thread(target=monitor_threads, daemon=True)
             # End of set up threads
+
             ordersfound = True
 
             # Break down the files in to those needed for each run
@@ -1097,9 +1148,13 @@ if __name__ == "__main__":
             print("PM Download workers starting")
             pmstart = datetime.now()
 
+        workerThreadsWaiting = 0
+
         for t in taskThreads:
             t.start()
 
+        daemonThread.start()
+      
         # Wait for all the queued scenarios to be processed
         taskQueue.join()
 
