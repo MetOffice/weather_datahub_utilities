@@ -12,7 +12,7 @@ There are options to support getting the latest run, preventing retrieval of run
 
 ### Installation
 
-Ensure you have python 3.7 minimum and pip installed, check with
+Ensure you have python 3.10 minimum and pip installed, check with
 ```
 py --version
 ```
