@@ -222,24 +222,20 @@ def get_order_file(
 
             if r.status_code == 200:
                 if verbose:
-                    print("get_order_file: Status code 200 - so breaking with this content length ",len(r.content))
+                    print("get_order_file: Status code 200 - writing file with content length ",len(r.content))
+
+                # Record time to first byte
+                ttfb = start + r.elapsed.total_seconds()
+
+                if os.path.exists(local_filename):
+                        os.remove(local_filename)
+
+                with open(local_filename, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                    f.close()
+
                 break
-
-        # Record time to first byte
-    ttfb = start + r.elapsed.total_seconds()
-
-    if os.path.exists(local_filename):
-            os.remove(local_filename)
-
-    if verbose:
-        print("get_order_file: Content length after breaking ",len(r.content))
-
-
-    with open(local_filename, "wb") as f:
-        for chunk in r.iter_content(chunk_size=8192):
-            f.write(chunk)
-
-    f.close()
 
     return [ttfb, local_filename]
 
