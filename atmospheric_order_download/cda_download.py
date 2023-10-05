@@ -138,6 +138,7 @@ def get_order_file(
 
     url = baseUrl + "/orders/" + orderName + "/latest/" + fileId + "/data"
 
+
     if debugMode == True:
         urlMod = input(
             "Order: "
@@ -174,7 +175,6 @@ def get_order_file(
 
     if verbose:
         print("get_order_file: ",MyThreadName, " Terminate value ",terminate)
-
 
     while True:
 
@@ -227,7 +227,11 @@ def get_order_file(
                 # Record time to first byte
                 ttfb = start + r.elapsed.total_seconds()
 
-                if os.path.exists(local_filename):
+                if os.path.exists(local_filename) == True:
+                    if fillGaps == True:
+                        print("fillGaps: True - already downloaded")
+                        break
+                    else:
                         os.remove(local_filename)
 
                 with open(local_filename, "wb") as f:
@@ -238,7 +242,6 @@ def get_order_file(
                 break
 
     return [ttfb, local_filename]
-
 
 def get_files_by_run(order, runsToDownload, numFilesPerOrder):
     # Break down the files in to those needed for each run
@@ -255,7 +258,6 @@ def get_files_by_run(order, runsToDownload, numFilesPerOrder):
                     break
 
     return filesByRun
-
 
 def monitor_threads():
     global terminate
@@ -871,6 +873,14 @@ if __name__ == "__main__":
         default=True,
         help="Turn off the verification of SSL on requests.get.",
     )
+    parser.add_argument(
+        "-g",
+        "--fillgaps",
+        action="store",
+        dest="fillgaps",
+        default=True,
+        help="Optional: Only download the gaps in files if selected"
+    )
 
     args = parser.parse_args()
 
@@ -893,6 +903,7 @@ if __name__ == "__main__":
     backdatedDate = args.backdateddate
     saveFileList = args.savefilelist
     verifySSL = args.verifyssl
+    fillGaps = args.fillgaps
 
     printUrl = args.printurl
 
