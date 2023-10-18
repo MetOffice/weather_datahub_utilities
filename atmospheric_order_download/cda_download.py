@@ -229,7 +229,8 @@ def get_order_file(
 
                 if os.path.exists(local_filename) == True:
                     if fillGaps == True:
-                        print("fillGaps: True - already downloaded")
+                        if verbose:
+                            print("File: ",local_filename," has already been downloaded")
                         break
                     else:
                         os.remove(local_filename)
@@ -876,9 +877,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "-g",
         "--fillgaps",
-        action="store",
+        action="store_true",
         dest="fillgaps",
-        default=True,
+        default=False,
         help="Optional: Only download the gaps in files if selected"
     )
 
