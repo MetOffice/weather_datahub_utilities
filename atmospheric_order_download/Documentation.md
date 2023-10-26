@@ -58,27 +58,28 @@ The utility will follow any re-directs and thus supports redirected delivery.
 
 ## Command line options
 
-| Option           | - | Description                           | Example of use                                                    | Default |
-| ---------------- | - |--------------------------------- | ---------------------------------------------------------------|-------- |
-| --url            | -u| Service base URL                 | --url https://api-metoffice.apiconnect.ibmcloud.com/metoffice/production/1.0.0 |         |  
-| --client         | -c| WDH client id key                 | --client xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx    |         |  
-| --secret         | -s| WDH secret key                    | --secret xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx    |         |  
-| --orders         | -o| List of orders name to download  | --orders p3_pp_euro,p3_pp_global                  |         |  
-| --runs           | -r| List of runs to download         | --runs 00,12 or latest                            | 0,6,12,18 |  
-| --workers        | -w| Number of worker threads         | --workers 2                                       | 4       |  
-| --join           | -j| Join downloaded files together   | --join                                            | False   | 
-| --verbose        | -v| Print extra status messages      | --verbose                                         | False   | 
-| --folderdate     | -d| Add date/time/run to folder      | --folderdate                                      | False   | 
-| --location       | -l| The base folder to store files   | --location C:\Data                                |         | 
-| --modellist      | -m| Pass the list of models to use   | --modellist mo-global,m-uk-latlon                 |         | 
-| --retry          | -a| Retry failures from each order   | --retry                                           | False   | 
-| --retryperiod    | -p| Seconds to wait for retry        | --retryperiod 20                                  | 30      | 
-| --debug          | -z| Put into debug mode              | --debug                                           | False   | 
-| --perfmode       | -y| Turn on API performance checking | --perfmode                                        | False   | 
-| --perftime       | -t| Length of MDDA calls to report   | --perftime 3                                      | 10      | 
-| --printurl       | -x| Print URLs as accessed/redirected | --printurl                                       | False   | 
-| --savefilelist   | -f| Save the file list               | --savefilelist                                    | False   |
-| --verifyssloff   | -q| Turn off verify SSL in requests  | --verifyssloff                                    | False   |
+| Option          | - | Description                           | Example of use                                                    | Default |
+| --------------- | - |--------------------------------- | ---------------------------------------------------------------|-------- |
+| --url           | -u| Service base URL                 | --url https://api-metoffice.apiconnect.ibmcloud.com/metoffice/production/1.0.0 |         |  
+| --client        | -c| WDH client id key                 | --client xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx    |         |  
+| --secret        | -s| WDH secret key                    | --secret xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx    |         |  
+| --orders        | -o| List of orders name to download  | --orders p3_pp_euro,p3_pp_global                  |         |  
+| --runs          | -r| List of runs to download         | --runs 00,12 or latest                            | 0,6,12,18 |  
+| --workers       | -w| Number of worker threads         | --workers 2                                       | 4       |  
+| --join          | -j| Join downloaded files together   | --join                                            | False   | 
+| --verbose       | -v| Print extra status messages      | --verbose                                         | False   | 
+| --folderdate    | -d| Add date/time/run to folder      | --folderdate                                      | False   | 
+| --location      | -l| The base folder to store files   | --location C:\Data                                |         | 
+| --modellist     | -m| Pass the list of models to use   | --modellist mo-global,m-uk-latlon                 |         | 
+| --retry         | -a| Retry failures from each order   | --retry                                           | False   | 
+| --retryperiod   | -p| Seconds to wait for retry        | --retryperiod 20                                  | 30      | 
+| --debug         | -z| Put into debug mode              | --debug                                           | False   | 
+| --perfmode      | -y| Turn on API performance checking | --perfmode                                        | False   | 
+| --perftime      | -t| Length of MDDA calls to report   | --perftime 3                                      | 10      | 
+| --printurl      | -x| Print URLs as accessed/redirected | --printurl                                       | False   | 
+| --savefilelist  | -f| Save the file list               | --savefilelist                                    | False   |
+| --verifyssloff  | -q| Turn off verify SSL in requests  | --verifyssloff                                    | False   | 
+| --fillgaps      | -g| Only download the gaps in files  | --fillgaps                                        | False   |
 
 
 
@@ -150,3 +151,9 @@ Diplays the URLs called and any redirects.
 ```
 
 Save the filelist in a file called ordername_{date_time}.json.  Uses the filelists folder.
+
+```
+--fillgaps
+```
+
+If an incomplete run has been downloaded, resulting in some missing data, the script can be rerun using the fillGaps flag, so only the missing data will be downloaded. This will prevent you using an excess of your data allowance.
