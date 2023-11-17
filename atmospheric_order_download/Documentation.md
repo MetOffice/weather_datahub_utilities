@@ -99,6 +99,7 @@ The --runs latest will return the latest set of files available for a particular
 
 If you call the download once a day all missing runs asked for on the order will be retrieved to catch up to a consistent position.
 
+Using --runs latest downloads the latest data run available. If this run is not included on your order then the latest run will not be downloaded. Once the latest data run for your order becomes available this can be downloaded using latest runs.
 ```
 --retry
 ```
