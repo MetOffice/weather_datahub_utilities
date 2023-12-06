@@ -13,7 +13,7 @@ import logging as log
 
 log.basicConfig(filename='ss_download.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
 
-base_url = "https://api-metoffice.apiconnect.ibmcloud.com/v0/forecasts/point/"
+base_url = "https://data.hub.api.metoffice.gov.uk/sitespecific/v0/point/"
 
 def retrieve_forecast(baseUrl, timesteps, requestHeaders, latitude, longitude, excludeMetadata, includeLocation):
     
@@ -61,22 +61,6 @@ if __name__ == "__main__":
         help="The frequency of the timesteps provided in the forecast. The options are hourly, three-hourly or daily",
     )
     parser.add_argument(
-        "-c",
-        "--client",
-        action="store",
-        dest="clientId",
-        default="",
-        help="REQUIRED: Client ID of your WDH Site-specific subscription",
-    )
-    parser.add_argument(
-        "-s",
-        "--secret",
-        action="store",
-        dest="secret",
-        default="",
-        help="REQUIRED: Your WDH API Site-specific client secret",
-    )
-    parser.add_argument(
         "-m",
         "--metadata",
         action="store",
@@ -108,24 +92,31 @@ if __name__ == "__main__":
         default="",
         help="Provide the longitude of the location you wish to retrieve the forecast for."
     )
+    parser.add_argument(
+        "-k",
+        "--apikey",
+        action="store",
+        dest="apikey",
+        default="",
+        help="REQUIRED: Your WDH API Credentials."
+    )
 
     args = parser.parse_args()
 
-    clientId = args.clientId
-    secret = args.secret
     timesteps = args.timesteps
     includeLocation = args.includeLocation
     excludeMetadata = args.excludeMetadata
     latitude = args.latitude
     longitude = args.longitude
+    apikey = args.apikey
 
-    # Client ID and Sectet must be supplied
-    if clientId == "" or secret == "":
-        print("ERROR: IBM clientId and secret must be supplied.")
+    # Client API key must be supplied
+    if apikey == "":
+        print("ERROR: API credentials must be supplied.")
         sys.exit()
     else:
-        requestHeaders = {"x-ibm-client-id": clientId,
-                          "x-ibm-client-secret": secret}
+        requestHeaders = {"apikey": apikey}
+
     if latitude == "" or longitude == "":
         print("ERROR: Latitude and longitude must be supplied")
         sys.exit()
