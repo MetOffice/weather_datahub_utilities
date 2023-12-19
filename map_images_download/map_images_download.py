@@ -19,7 +19,7 @@ import uuid
 # Example code to download PNG data files from the Met Office Weather DataHub via API calls
 
 MODEL_LIST = ["mo-global"]
-BASE_URL = "https://api-metoffice.apiconnect.ibmcloud.com/metoffice/production/map-images/1.0.0"
+BASE_URL = "https://data.hub.api.metoffice.gov.uk/map-images/1.0.0"
 debugMode = False
 printUrl = False
 retryCount = 3
@@ -60,7 +60,6 @@ def get_order_details(
         exit()
     else:
         details = req.json()
-
     return details
 
 
@@ -79,7 +78,7 @@ def get_order_file(
 
     ttfb = 0
 
-    url = baseUrl + "/orders/" + orderName + "/latest/" + fileId + "/data"
+    url = requests.utils.quote(baseUrl + "/orders/" + orderName + "/latest/" + fileId + "/data", safe=': /')
     if landLayer:
         url = url + "?includeLand=true"
 
@@ -332,7 +331,7 @@ def get_my_orders(baseUrl, requestHeaders):
             print("redirected to: ", ordr.url)
 
     if ordr.status_code != 200:
-        print("ERROR:  Unable to get my orders list. Status code: ", ordr.status_code)
+        print("ERROR:  Unable to get my orders list. Status code: ", ordr. status_code)
         exit()
     orddetails = ordr.json()
 
@@ -444,23 +443,7 @@ if __name__ == "__main__":
         action="store",
         dest="baseUrl",
         default=BASE_URL,
-        help="Base URL used to access Weather DataHub API. Defaults to https://api-metoffice.apiconnect.ibmcloud.com/metoffice/production/1.0.0.",
-    )
-    parser.add_argument(
-        "-c",
-        "--client",
-        action="store",
-        dest="clientId",
-        default="",
-        help="REQUIRED: Client ID of your WDH Application",
-    )
-    parser.add_argument(
-        "-s",
-        "--secret",
-        action="store",
-        dest="secret",
-        default="",
-        help="REQUIRED: Your WDH API Gateway secret",
+        help="Base URL used to access Weather DataHub API. Defaults to https://data.hub.api.metoffice.gov.uk/map-images/1.0.0",
     )
     parser.add_argument(
         "-o",
@@ -557,7 +540,7 @@ if __name__ == "__main__":
         action="store",
         dest="apikey",
         default="",
-        help="Use direct API Key when not via APIM.",
+        help="REQUIRED: Your WDH API Credentials.",
     )
     parser.add_argument(
         "-ll",
@@ -571,8 +554,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     baseUrl = args.baseUrl
-    clientId = args.clientId
-    secret = args.secret
     orderRuns = args.orderRuns
     useEnhancedApi = True
     verbose = args.verbose
@@ -601,15 +582,12 @@ if __name__ == "__main__":
     numFilesPerOrder = 0
     guidFileNames = False
 
-    # Client ID and Secret must be supplied
-    if (clientId == "" or secret == "") and apikey == "":
-        print("ERROR: IBM client and secret must be supplied.")
-        exit()
-
+    # Client API key must be supplied
     if apikey == "":
-        requestHeaders = {"x-ibm-client-id": clientId, "x-ibm-client-secret": secret}
+        print("ERROR: API credentials must be supplied.")
+        exit()
     else:
-        requestHeaders = {"x-api-key": apikey}
+        requestHeaders = {"apikey": apikey}
 
     if baseFolder != "":
         try:
@@ -892,7 +870,7 @@ if __name__ == "__main__":
 
             try:
                 if apikey != "":
-                    requestHeaders = {"x-api-key": apikey}
+                    requestHeaders = {"apikey": apikey}
 
                 if verbose:
                     print(
