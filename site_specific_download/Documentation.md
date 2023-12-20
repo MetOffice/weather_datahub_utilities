@@ -56,15 +56,14 @@ Client ID, the secret, latitude and longitude are the only mandatory parameters.
 
 ## Command line options
 
-| Option           | - | Description                           | Example of use                                                    | Default |
-| ---------------- | - |--------------------------------- | ---------------------------------------------------------------|-------- |
-| --timesteps      | -t| Frequency of timesteps            | --timesteps daily| hourly         |  
-| --client         | -c| WDH client id key                 | --client xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx    |         |  
-| --secret         | -s| WDH secret key                    | --secret xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx    |         |  
-| --latitude       | -y| Latitude of the location for the forecast  | --latitude 50.7                  |         |  
-| --longitude      | -x| Longitude of the location for the forecast         | --longitude -3.52                            |    |  
-| --metadata        | -m| Exclude parameter metadata         | --metadata true                                       | False       |  
-| --name           | -n| Include the name of the forecast location   | --name false                                            | True   | 
+| Option      | -    | Description                                | Example of use                                | Default |
+|-------------|------|--------------------------------------------|-----------------------------------------------|-------- |
+| --timesteps | -t   | Frequency of timesteps                     | --timesteps daily                             | hourly         |  
+| --apikey    | -k   | WDH client API Key                         | --apikey xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx |         |  
+| --latitude  | -y   | Latitude of the location for the forecast  | --latitude 50.7                               |         |  
+| --longitude | -x   | Longitude of the location for the forecast | --longitude -3.52                             |    |  
+| --metadata  | -m   | Exclude parameter metadata                 | --metadata true                               | False       |  
+| --name      | -n   | Include the name of the forecast location  | --name false                                  | True   | 
 
 ## Some guidance on use
 
