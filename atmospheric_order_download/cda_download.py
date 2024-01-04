@@ -23,7 +23,7 @@ from enum import Enum
 # Example code to download GRIB data files from the Met Office Weather DataHub via API calls
 
 MODEL_LIST = ["mo-global", "mo-uk", "mo-uk-latlon", "mo-mogrepsg", "mo-mogrepsuk"]
-BASE_URL = "https://api-metoffice.apiconnect.ibmcloud.com/metoffice/production/1.0.0"
+BASE_URL = "https://data.hub.api.metoffice.gov.uk/atmospheric-models/1.0.0"
 debugMode = False
 perfMode = False
 printUrl = False
@@ -136,8 +136,7 @@ def get_order_file(
         if debugMode == True:
             print("DEBUG: New fileID is: " + fileId)
 
-    url = baseUrl + "/orders/" + orderName + "/latest/" + fileId + "/data"
-
+    url = requests.utils.quote(baseUrl + "/orders/" + orderName + "/latest/" + fileId + "/data", safe=': /')
 
     if debugMode == True:
         urlMod = input(
@@ -719,23 +718,7 @@ if __name__ == "__main__":
         action="store",
         dest="baseUrl",
         default=BASE_URL,
-        help="Base URL used to access Weather DataHub API. Defaults to https://api-metoffice.apiconnect.ibmcloud.com/metoffice/production/1.0.0.",
-    )
-    parser.add_argument(
-        "-c",
-        "--client",
-        action="store",
-        dest="clientId",
-        default="",
-        help="REQUIRED: Client ID of your WDH Application",
-    )
-    parser.add_argument(
-        "-s",
-        "--secret",
-        action="store",
-        dest="secret",
-        default="",
-        help="REQUIRED: Your WDH API Gateway secret",
+        help="Base URL used to access Weather DataHub API. Defaults to https://data.hub.api.metoffice.gov.uk/atmospheric-models/1.0.0",
     )
     parser.add_argument(
         "-o",
@@ -848,7 +831,7 @@ if __name__ == "__main__":
         action="store",
         dest="apikey",
         default="",
-        help="Use direct API Key when not via APIM.",
+        help="REQUIRED: Your WDH API Credentials.",
     )
     parser.add_argument(
         "-b",
@@ -886,8 +869,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     baseUrl = args.baseUrl
-    clientId = args.clientId
-    secret = args.secret
     orderRuns = args.orderRuns
     useEnhancedApi = True
     verbose = args.verbose
@@ -931,15 +912,12 @@ if __name__ == "__main__":
     numFilesPerOrder = 0
     guidFileNames = False
 
-    # Client ID and Sectet must be supplied
-    if (clientId == "" or secret == "") and apikey == "":
-        print("ERROR: IBM client and secret must be supplied.")
-        sys.exit()
-
+    # Client API credentials must be supplied
     if apikey == "":
-        requestHeaders = {"x-ibm-client-id": clientId, "x-ibm-client-secret": secret}
+        print("ERROR: API credentials must be supplied.")
+        sys.exit()
     else:
-        requestHeaders = {"x-api-key": apikey}
+        requestHeaders = {"apikey": apikey}
 
     if baseFolder != "":
         try:

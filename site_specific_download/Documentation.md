@@ -52,7 +52,7 @@ To run:
 ```
 py ss_download.py {arguments}
 ```
-Client ID, the secret, latitude and longitude are the only mandatory parameters.
+Client API key, latitude and longitude are the only mandatory parameters.
 
 ## Command line options
 
