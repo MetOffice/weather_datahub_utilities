@@ -14,3 +14,7 @@ This is a Python script to connect to the API gateway and download map images re
 # site_specific_download (beta)
 
 This is a Python script to connect to the API gateway and retrieve a site-specific forecast in JSON format. 
+
+# improver_download (beta)
+
+This is a Python script to connect to the API gateway and retrieve BPF forecast in JSON format. 
