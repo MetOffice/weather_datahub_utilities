@@ -57,9 +57,8 @@ Client ID, the secret and orders to download are the only mandatory parameters.
 
 | Option        |     | Description                                    | Example of use                                                                            | Default   |
 |---------------|-----|------------------------------------------------|-------------------------------------------------------------------------------------------|-----------|
-| --url         | -u  | Service base URL                               | --url https://api-metoffice.apiconnect.ibmcloud.com/metoffice/production/map-images/1.0.0 |           |  
-| --client      | -c  | WDH client id key                              | --client xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx                                             |           |  
-| --secret      | -s  | WDH secret key                                 | --secret xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx                                             |           |  
+| --url         | -u  | Service base URL                               | --url https://data.hub.api.metoffice.gov.uk/map-images/1.0.0 |           |  
+| --apikey      | -k  | WDH client API key                             | --apikey xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx                                             |           |  
 | --orders      | -o  | List of orders name to download                | --orders p3_pp_euro,p3_pp_global                                                          |           |  
 | --runs        | -r  | List of runs to download                       | --runs 00,12 or latest                                                                    | 00,12 |  
 | --workers     | -w  | Number of worker threads                       | --workers 2                                                                               | 4         |  
@@ -71,7 +70,7 @@ Client ID, the secret and orders to download are the only mandatory parameters.
 | --retryperiod | -p  | Seconds to wait for retry                      | --retryperiod 30                                                                          | 300       | 
 | --debug       | -z  | Put into debug mode                            | --debug                                                                                   | False     | 
 | --printurl    | -x  | Print URLs as accessed/redirected              | --printurl                                                                                | False     | 
-| --landlayer   | -ll | Includes the land layer in the returned images             | --landlayer                                                                                | False     | 
+| --landlayer   | -ll | Includes the land layer in the returned images | --landlayer                                                                               | False     | 
 
 
 
