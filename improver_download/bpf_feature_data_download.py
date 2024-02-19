@@ -44,6 +44,12 @@ def retrieve_forecast(base_url, collection_id, request_headers, location_id):
 
     req.encoding = 'utf-8'
 
+    if req.status_code != 200:
+        if req.status_code == 204:
+            print("WARNING: No content was retrieved, please check your collection and location IDs")
+        else:
+            print("ERROR: Request unsuccessful")
+
     print(req.text)
 
 
