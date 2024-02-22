@@ -1,4 +1,4 @@
-# bpf_download
+# bpf_download (beta)
 
 This folder contains example download code for customers to use when using the API method to access the Weather DataHub BPF API.
 There are 3 python scripts. One for retrieving the collections, one for retrieving the locations, and one for retrieving the data provided
