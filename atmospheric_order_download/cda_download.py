@@ -65,10 +65,6 @@ def get_order_details(
             print(exctwo)
             sys.exit(8)
 
-    if verbose and apikey == "":
-        print("Plan and limit : " + req.headers["X-RateLimit-Limit"])
-        print("Remaining calls: " + req.headers["X-RateLimit-Remaining"])
-
     if printUrl == True:
         print("get_order_details: ", url)
         if url != req.url:
