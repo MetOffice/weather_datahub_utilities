@@ -24,6 +24,7 @@ from enum import Enum
 
 MODEL_LIST = ["mo-global", "mo-uk", "mo-uk-latlon", "mo-mogrepsg", "mo-mogrepsuk"]
 BASE_URL = "https://data.hub.api.metoffice.gov.uk/atmospheric-models/1.0.0"
+DEFAULT_DATA_SPEC = "1.0.0"
 debugMode = False
 perfMode = False
 printUrl = False
@@ -32,7 +33,7 @@ workerThreadsWaiting = 0
 
 
 def get_order_details(
-        baseUrl, requestHeaders, orderName, useEnhancedApi, runsToDownload
+        baseUrl, requestHeaders, orderName, useEnhancedApi, runsToDownload, dataSpec
 ):
     if perfMode:
         print("PM ", inspect.stack()[0][3], " started")
@@ -42,15 +43,15 @@ def get_order_details(
 
     actualHeaders = {"Accept": "application/json"}
     actualHeaders.update(requestHeaders)
-
+    queryParams = {"dataSpec":dataSpec}
     url = baseUrl + "/orders/" + orderName + "/latest"
     if useEnhancedApi:
-        url = url + "?detail=MINIMAL"
+        queryParams["detail"] = "MINIMAL"
         if len(runsToDownload) == 1:
-            url = url + "&runfilter=" + runsToDownload[0]
+            queryParams["runfilter"] = runsToDownload[0]
 
     try:
-        req = requests.get(url, headers=actualHeaders, verify=verifySSL)
+        req = requests.get(url, headers=actualHeaders, verify=verifySSL, params=queryParams)
         req.raise_for_status()
     except Exception as exc:
         print("EXCEPTION: get_order_details failed first time")
@@ -58,7 +59,7 @@ def get_order_details(
         print(exc)
         time.sleep(5)
         try:
-            req = requests.get(url, headers=actualHeaders, verify=verifySSL)
+            req = requests.get(url, headers=actualHeaders, verify=verifySSL, params=queryParams)
             req.raise_for_status()
         except Exception as exctwo:
             print("EXCEPTION: get_order_details failed second time")
@@ -109,6 +110,7 @@ def get_order_file(
         folder,
         start,
         backdatedDate,
+        dataSpec
 ):
     # If file id is too long or random file names required generate a uuid for the file name
 
@@ -158,6 +160,7 @@ def get_order_file(
             )
 
     actualHeaders = {"Accept": "application/x-grib"}
+    queryParams = {"dataSpec":dataSpec}
     actualHeaders.update(requestHeaders)
 
     if perfMode:
@@ -173,7 +176,7 @@ def get_order_file(
 
     while True:
 
-        with requests.get(url, headers=actualHeaders, allow_redirects=True, stream=True, verify=verifySSL) as r:
+        with requests.get(url, headers=actualHeaders, allow_redirects=True, stream=True, verify=verifySSL, params=queryParams) as r:
 
             if r.url.find("--") != -1:
                 if verbose:
@@ -304,6 +307,7 @@ def download_worker():
                     downloadTask["folder"],
                     startTime,
                     downloadTask["backdatedDate"],
+                    downloadTask["dataSpec"]
                 )
                 timeToFirstByte = round((downloadResp[0] - startTime), 2)
                 downloadedFile = downloadResp[1]
@@ -329,6 +333,7 @@ def download_worker():
                         "currentTime": current_time,
                         "ordername": downloadTask["orderName"],
                         "folder": downloadTask["folder"],
+                        "dataspec": downloadTask["dataSpec"]
                     }
                 )
                 downloadTask["responseLog"].append(
@@ -862,6 +867,25 @@ if __name__ == "__main__":
         help="Optional: Only download the gaps in files if selected"
     )
 
+    parser.add_argument(
+        "-ds",
+        "--dataspec",
+        action="store",
+        dest="dataSpec",
+        default=DEFAULT_DATA_SPEC,
+        help="The version of the data that needs retrieving. Defaults to 1.0.0",
+    )
+
+    parser.add_argument(
+        "-fds",
+        "--folderdataspec",
+        action="store_true",
+        dest="folderDataSpec",
+        default=False,
+        help="Splits downloaded data and other output files into versioned folders"
+    )
+
+
     args = parser.parse_args()
 
     baseUrl = args.baseUrl
@@ -882,6 +906,8 @@ if __name__ == "__main__":
     saveFileList = args.savefilelist
     verifySSL = args.verifyssl
     fillGaps = args.fillgaps
+    dataSpec = args.dataSpec
+    folderDataSpec = args.folderDataSpec
 
     printUrl = args.printurl
 
@@ -923,7 +949,8 @@ if __name__ == "__main__":
         except OSError as error:
             print("ERROR: Base folder", baseFolder, "cannot be accessed or created.")
             sys.exit()
-
+    if(folderDataSpec):
+        baseFolder = baseFolder + dataSpec + "/"
     os.makedirs(baseFolder + ROOT_FOLDER, exist_ok=True)
     os.makedirs(baseFolder + LATEST_FOLDER, exist_ok=True)
     os.makedirs(baseFolder + RESULTS_FOLDER, exist_ok=True)
@@ -1049,7 +1076,7 @@ if __name__ == "__main__":
             continue
 
         order = get_order_details(
-            baseUrl, requestHeaders, orderName, useEnhancedApi, runsToDownload
+            baseUrl, requestHeaders, orderName, useEnhancedApi, runsToDownload, dataSpec
         )
         if order != None:
             # Create queue and threads for processing downloads
@@ -1112,6 +1139,7 @@ if __name__ == "__main__":
                         "responseLog": responseLog,
                         "downloadErrorLog": downloadErrorLog,
                         "backdatedDate": backdatedDate,
+                        "dataSpec": dataSpec
                     }
                     taskQueue.put(downloadTask)
 
