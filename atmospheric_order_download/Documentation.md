@@ -79,10 +79,8 @@ The utility will follow any re-directs and thus supports redirected delivery.
 | --savefilelist   | -f   | Save the file list                                                   | --savefilelist                                                       | False     |
 | --verifyssloff   | -q   | Turn off verify SSL in requests                                      | --verifyssloff                                                       | False     | 
 | --fillgaps       | -g   | Only download the gaps in files                                      | --fillgaps                                                           | False     |
-| --dataspec       | -fd  | Downloads a specifc dataSpec                                         | --dataSpec 1.1.0                                                     | 1.0.0     |
+| --dataspec       | -ds  | Downloads a specifc dataSpec                                         | --dataSpec 1.1.0                                                     | 1.0.0     |
 | --folderdataspec | -fds | Splits downloaded data and other output files into versioned folders | --folderdataspec                                                     | False     |
-<b>Note:</b> We recommend using folderdataspec if you are trying both dataSpec 1.0.0 and 1.1.0 in parallel. <br>
-This will add the dataSpec into the download path, for example if you are taking 1.1.0 data it would be downloaded into: /1.1.0/downloaded
 
 ## Some guidance on use
 
@@ -159,3 +157,15 @@ Save the filelist in a file called ordername_{date_time}.json.  Uses the filelis
 ```
 
 If an incomplete run has been downloaded, resulting in some missing data, the script can be rerun using the fillGaps flag, so only the missing data will be downloaded. This will prevent you using an excess of your data allowance.
+
+```
+--dataspec
+```
+There are two dataSpec options:<br>
+1.0.0 - This is the current default but will be retired later this year<br>
+1.1.0 - The recommended spec, it's an updated version of 1.0.0. Details on what's changed can be found here: https://datahub.metoffice.gov.uk/support/upcoming-changes
+```
+--folderdataspec
+```
+We recommend using folderdataspec if you are trying both dataSpec 1.0.0 and 1.1.0 in parallel.
+This will add the dataSpec into the download path, for example if you are taking 1.1.0 data it would be downloaded into: /1.1.0/downloaded
