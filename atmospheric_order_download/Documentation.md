@@ -79,7 +79,7 @@ The utility will follow any re-directs and thus supports redirected delivery.
 | --savefilelist   | -f   | Save the file list                                                   | --savefilelist                                                       | False     |
 | --verifyssloff   | -q   | Turn off verify SSL in requests                                      | --verifyssloff                                                       | False     | 
 | --fillgaps       | -g   | Only download the gaps in files                                      | --fillgaps                                                           | False     |
-| --dataspec       | -ds  | Downloads a specifc dataSpec                                         | --dataSpec 1.1.0                                                     | 1.1.0     |
+| --dataspec       | -ds  | Downloads a specific dataSpec                                         | --dataSpec 1.1.0                                                     | 1.1.0     |
 | --folderdataspec | -fds | Splits downloaded data and other output files into versioned folders | --folderdataspec                                                     | False     |
 
 ## Some guidance on use
