@@ -24,7 +24,7 @@ from enum import Enum
 
 MODEL_LIST = ["mo-global", "mo-uk", "mo-uk-latlon", "mo-mogrepsg", "mo-mogrepsuk"]
 BASE_URL = "https://data.hub.api.metoffice.gov.uk/atmospheric-models/1.0.0"
-DEFAULT_DATA_SPEC = "1.0.0"
+DEFAULT_DATA_SPEC = "1.1.0"
 debugMode = False
 perfMode = False
 printUrl = False
@@ -118,6 +118,7 @@ def get_order_file(
     global debugMode
     global perfMode
     global workerThreadsWaiting
+    global terminate
 
 
     if len(fileId) > 100 or guidFileNames:
@@ -211,7 +212,7 @@ def get_order_file(
                         
                 else: 
                     print("get_order_file: Thread ",MyThreadName, " terminating as required by monitor")
-                    raise Exception("get_order_file: Thread ".MyThreadName, " terminating as required by monitor")
+                    raise Exception("get_order_file: Thread ",MyThreadName, " terminating as required by monitor")
 
                 if failCount >= failLimit:
                     raise Exception("HTTP Reason and Status: " + r.reason, r.status_code)
@@ -333,7 +334,7 @@ def download_worker():
                         "currentTime": current_time,
                         "ordername": downloadTask["orderName"],
                         "folder": downloadTask["folder"],
-                        "dataspec": downloadTask["dataSpec"]
+                        "dataSpec": downloadTask["dataSpec"]
                     }
                 )
                 downloadTask["responseLog"].append(
@@ -1263,6 +1264,7 @@ if __name__ == "__main__":
         actualHeaders.update(requestHeaders)
         stillInError = []
         deleteFile = False
+        terminate = False
 
         for retryFile in retryManifest:
             if verbose:
@@ -1288,7 +1290,7 @@ if __name__ == "__main__":
 
             try:
                 if apikey != "":
-                    requestHeaders = {"x-api-key": apikey}
+                    requestHeaders = {"apikey": apikey}
 
                 if verbose:
                     print(
@@ -1307,6 +1309,7 @@ if __name__ == "__main__":
                     retryFile["folder"],
                     startTime,
                     backdatedDate,
+                    retryFile["dataSpec"],
                 )
                 fileSize = os.path.getsize(downloadResp[1])
 
