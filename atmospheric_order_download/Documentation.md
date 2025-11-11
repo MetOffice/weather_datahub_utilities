@@ -39,7 +39,7 @@ Finally, to install the required packages run this command in the root of the or
 pip install requests
 ```
 
-To deactivate the virtual environment, simple run:
+To deactivate the virtual environment, simply run:
 ```
 .\env\Scripts\deactivate
 ```
@@ -79,7 +79,7 @@ The utility will follow any re-directs and thus supports redirected delivery.
 | --savefilelist   | -f   | Save the file list                                                   | --savefilelist                                                       | False     |
 | --verifyssloff   | -q   | Turn off verify SSL in requests                                      | --verifyssloff                                                       | False     | 
 | --fillgaps       | -g   | Only download the gaps in files                                      | --fillgaps                                                           | False     |
-| --dataspec       | -ds  | Downloads a specifc dataSpec                                         | --dataSpec 1.1.0                                                     | 1.0.0     |
+| --dataspec       | -ds  | Downloads a specifc dataSpec                                         | --dataSpec 1.1.0                                                     | 1.1.0     |
 | --folderdataspec | -fds | Splits downloaded data and other output files into versioned folders | --folderdataspec                                                     | False     |
 
 ## Some guidance on use
