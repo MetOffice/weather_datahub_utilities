@@ -18,7 +18,6 @@ from datetime import datetime, timedelta
 import requests
 import traceback
 import json
-from enum import Enum
 
 # Example code to download GRIB data files from the Met Office Weather DataHub via API calls
 
@@ -1042,13 +1041,14 @@ if __name__ == "__main__":
                 runsToCheck = runsToDownload.split(",")
                 for checkRun in runsToCheck:
                     runWanted = run_wanted(myOrders, orderName, checkRun)
-                    if runWanted and verbose:
-                        print("This run " + checkRun + " is wanted.")
+                    if runWanted:
                         finalRuns.append(checkRun)
+                        if verbose:
+                            print("This run " + checkRun + " is wanted.")
+                            finalRuns.append(checkRun)
                     else:
                         if verbose:
                             print("This run " + checkRun + " is not wanted")
-                        continue
 
                 runsToDownload = finalRuns
 
@@ -1072,7 +1072,7 @@ if __name__ == "__main__":
             print(
                 "WARNING: No runs for order "
                 + orderName
-                + "were found.  Don't expect any data."
+                + " were found.  Don't expect any data."
             )
             continue
 
